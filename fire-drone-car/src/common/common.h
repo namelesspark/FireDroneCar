@@ -34,7 +34,6 @@ typedef struct
     bool water_level_override; // 외부에서 강도 직접 지정했는지 여부
 
     // 모터 관련
-    float distance;
     float lin_vel;
     float ang_vel;
 
