@@ -21,16 +21,6 @@
 #define COMM_RECV_BUF_SIZE 1024
 
 // ----------------------
-// 컨텍스트 구조체
-// ----------------------
-typedef struct
-{
-    shared_state_t *state;
-    pthread_mutex_t *state_mutex;
-    volatile bool *shutdown_flag;
-} comm_ctx_t;
-
-// ----------------------
 // 내부 함수 프로토타입
 // ----------------------
 static int comm_setup_server_socket(int port);
