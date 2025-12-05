@@ -27,6 +27,7 @@ typedef struct
 {
     shared_state_t *state;
     pthread_mutex_t *state_mutex;
+    volatile bool *shutdown_flag;
 } comm_ctx_t;
 
 // ----------------------
@@ -68,7 +69,7 @@ void *comm_thread(void *arg)
     size_t recv_len = 0;
     long long last_status_ms = now_ms();
 
-    while (1)
+    while (!*(ctx->shutdown_flag))
     {
         fd_set readfds;
         FD_ZERO(&readfds);
