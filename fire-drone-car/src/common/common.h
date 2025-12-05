@@ -33,6 +33,11 @@ typedef struct
     int water_level;           // 물/펌프 강도 단계 (0 ~ N)
     bool water_level_override; // 외부에서 강도 직접 지정했는지 여부
 
+    // 모터 관련
+    float distance;
+    float lin_vel;
+    float ang_vel;
+
     // 센서 데이터
     float t_fire;   // 열원 온도 추정값 (°C)
     float dT;       // 주변 대비 온도 차이 (°C)
@@ -41,6 +46,7 @@ typedef struct
     int hot_row; // 열화상 센서에서 가장 뜨거운 픽셀의 행
     int hot_col; // 열화상 센서에서 가장 뜨거운 픽셀의 열
 
-    // 안전 관련
+    // 안전, 에러 관련
     bool emergency_stop; // 비상 정지 플래그 (E-STOP)
+    int error_code;
 } shared_state_t;
