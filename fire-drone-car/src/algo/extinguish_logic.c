@@ -59,8 +59,8 @@ int run_extinguish_loop(shared_state_t *state) {
     }
 
     if (!is_spraying) { // 분사 시작
-        printf("run_extinguish_loop: SPRAY START - 강도: %d/%d, 시도: %d/%d\n",
-               current_level, WATER_LEVEL_MAX, retry_count + 1, MAX_RETRY_PER_LEVEL);
+        printf("run_extinguish_loop: SPRAY START - 강도: %d/%d\n",
+               current_level, WATER_LEVEL_MAX);
 
         set_water_level(state, current_level);
         spray_start_time = time(NULL);
@@ -73,18 +73,20 @@ int run_extinguish_loop(shared_state_t *state) {
     time_t now = time(NULL);
     double elapsed = difftime(now, spray_start_time);
     if (elapsed < SPRAY_DURATION_SEC) {
-        return EXTINGUISH_FAILED; // 일단 첫 시도 후 바로 실패로 판정
+        return EXTINGUISH_IN_PROGRESS; // 일단 첫 시도 후 바로 실패로 판정
     }
 
-    printf("extinguish_logic: SPRAY COMPLETE (%.1f sec), Current Temp: %.1f°C\n",
-           elapsed, T); is_spraying = false;
-    
-    // 소화 안 됐으면
-    current_level += WATER_LEVEL_STEP;
-    printf("extinguish_logic: 강도 증가: %d → %d\n",
-               current_level - WATER_LEVEL_STEP, current_level);
+    // 최대 강도 초과 체크
+    if (current_level > WATER_LEVEL_MAX) {
+        printf("extinguish_logic: 강도 초과, 더 가까이 접근 필요\n");
+        extinguish_reset();  // 강도 리셋
+        return EXTINGUISH_NEED_CLOSER;  // APPROACH로 전환
+    }
 
-    return EXTINGUISH_IN_PROGRESS;
+    printf("extinguish_logic: 강도 증가: %d -> %d\n",
+           current_level - WATER_LEVEL_STEP, current_level);
+
+    return EXTINGUISH_IN_PROGRESS;  // 다음 강도로 재시도
 }
 
 
