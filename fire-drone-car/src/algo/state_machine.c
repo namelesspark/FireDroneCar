@@ -72,8 +72,6 @@ void state_machine_update(shared_state_t *state, pthread_mutex_t *mutex) {
 }
 
 
-// ==================== 각 상태 핸들러 ====================
-
 void state_idle_handler(shared_state_t *state) {
     // IDLE: 대기 상태
     shared_state_lock(state);

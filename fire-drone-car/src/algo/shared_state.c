@@ -14,7 +14,7 @@ void shared_state_init(shared_state_t *state) {
     state->water_level_override = false;
 
     state->lin_vel = 0.0f;
-    state->ang_vel = 0.0f;
+    state->ang_vel = 0.0f; // 회전 속도
 
     state->dT = 0.0f;
 
