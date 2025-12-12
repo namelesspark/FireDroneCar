@@ -125,3 +125,4 @@ bool check_obstacle(shared_state_t *state) {
     }
     return false;  // 장애물 없음
 }
+
