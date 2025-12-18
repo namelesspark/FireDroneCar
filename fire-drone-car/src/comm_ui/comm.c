@@ -1,3 +1,4 @@
+
 // comm.c
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,14 +21,7 @@
 #define COMM_STATUS_INTERVAL_MS 200 // 상태 전송 주기 (ms)
 #define COMM_RECV_BUF_SIZE 1024
 
-// ----------------------
-// 컨텍스트 구조체
-// ----------------------
-typedef struct
-{
-    shared_state_t *state;
-    pthread_mutex_t *state_mutex;
-} comm_ctx_t;
+
 
 // ----------------------
 // 내부 함수 프로토타입
@@ -254,7 +248,7 @@ static int comm_setup_server_socket(int port)
 
 // ----------------------
 // 상태 문자열 포맷
-//   예) MODE=EXT;WLV=2;T_FIRE=123.4;DT=30.2;D=0.35;HOT=4,7
+//   예) MODE=EXT;T_FIRE=123.4;DT=30.2;D=0.35;HOT=4,7
 // ----------------------
 static void comm_format_status_line(char *buf, size_t size,
                                     const shared_state_t *st)
@@ -284,9 +278,8 @@ static void comm_format_status_line(char *buf, size_t size,
         break;
     }
 
-    snprintf(buf, size, "MODE=%s;WLV=%d;T_FIRE=%.1f;DT=%.1f;D=%.2f;HOT=%d,%d;ESTOP=%d",
+    snprintf(buf, size, "MODE=%s;T_FIRE=%.1f;DT=%.1f;D=%.2f;HOT=%d,%d;ESTOP=%d",
              mode_str,
-             st->water_level,
              st->t_fire,
              st->dT,
              st->distance,
@@ -301,7 +294,6 @@ static void comm_format_status_line(char *buf, size_t size,
 //     "START"
 //     "STOP"
 //     "ESTOP"
-//     "SET_WLV 2"
 // ----------------------
 static void comm_handle_command_line(const char *line,
                                      shared_state_t *st,
@@ -333,19 +325,6 @@ static void comm_handle_command_line(const char *line,
     {
         st->emergency_stop = true;
     }
-    else if (strncasecmp(line, "SET_WLV", 7) == 0)
-    {
-        int lv = 0;
-        if (sscanf(line + 7, "%d", &lv) == 1)
-        {
-            if (lv < 0)
-                lv = 0;
-            if (lv > 5)
-                lv = 5; // 물 강도 단계 최대 5단 예시
-            st->water_level = lv;
-            st->water_level_override = true; // 이런 플래그 두면 좋음
-        }
-    }
     else
     {
         // TODO: 필요하면 더 많은 명령 추가 (예: MODE=SEARCH 등)
@@ -363,3 +342,4 @@ static long long now_ms(void)
     gettimeofday(&tv, NULL);
     return (long long)tv.tv_sec * 1000LL + tv.tv_usec / 1000;
 }
+
