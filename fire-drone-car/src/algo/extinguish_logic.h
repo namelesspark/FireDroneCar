@@ -5,10 +5,9 @@
 #include "../common/common.h"
 #include "shared_state.h"
 
-#define WATER_LEVEL_MIN     1
-#define WATER_LEVEL_MAX     5
 #define SPRAY_DURATION_SEC  3.0f
 #define EXTINGUISH_TEMP     40.0f
+#define EXTINGUISH_TRY      5
 
 #define EXTINGUISH_SUCCESS      0
 #define EXTINGUISH_IN_PROGRESS  1

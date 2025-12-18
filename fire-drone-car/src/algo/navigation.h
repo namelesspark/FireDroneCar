@@ -6,8 +6,8 @@
 #include "shared_state.h"
 
 // 속도/조향 상수
-#define SEARCH_LINEAR_VEL       0.1f
-#define SEARCH_STEER_ANGLE      0.5f
+#define SEARCH_LINEAR_VEL       0.2f
+#define SEARCH_STEER_ANGLE      0.6f
 
 #define DETECT_LINEAR_VEL       0.08f
 #define DETECT_STEER_GAIN       0.15f
@@ -30,5 +30,9 @@ void navigation_init(void);
 void compute_search_motion(shared_state_t *state);
 bool compute_detect_motion(shared_state_t *state);  // true = 정렬 완료
 void compute_approach_motion(shared_state_t *state);
+
+// 머리 상하 스캔 (search에서 호출)
+void update_neck_scan(void);
+float get_current_neck_tilt(void);
 
 #endif

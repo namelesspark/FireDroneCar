@@ -248,7 +248,7 @@ static int comm_setup_server_socket(int port)
 
 // ----------------------
 // 상태 문자열 포맷
-//   예) MODE=EXT;WLV=2;T_FIRE=123.4;DT=30.2;D=0.35;HOT=4,7
+//   예) MODE=EXT;T_FIRE=123.4;DT=30.2;D=0.35;HOT=4,7
 // ----------------------
 static void comm_format_status_line(char *buf, size_t size,
                                     const shared_state_t *st)
@@ -278,9 +278,8 @@ static void comm_format_status_line(char *buf, size_t size,
         break;
     }
 
-    snprintf(buf, size, "MODE=%s;WLV=%d;T_FIRE=%.1f;DT=%.1f;D=%.2f;HOT=%d,%d;ESTOP=%d",
+    snprintf(buf, size, "MODE=%s;T_FIRE=%.1f;DT=%.1f;D=%.2f;HOT=%d,%d;ESTOP=%d",
              mode_str,
-             st->water_level,
              st->t_fire,
              st->dT,
              st->distance,
@@ -295,7 +294,6 @@ static void comm_format_status_line(char *buf, size_t size,
 //     "START"
 //     "STOP"
 //     "ESTOP"
-//     "SET_WLV 2"
 // ----------------------
 static void comm_handle_command_line(const char *line,
                                      shared_state_t *st,
@@ -326,19 +324,6 @@ static void comm_handle_command_line(const char *line,
     else if (strcasecmp(line, "ESTOP") == 0 || strcasecmp(line, "E-STOP") == 0)
     {
         st->emergency_stop = true;
-    }
-    else if (strncasecmp(line, "SET_WLV", 7) == 0)
-    {
-        int lv = 0;
-        if (sscanf(line + 7, "%d", &lv) == 1)
-        {
-            if (lv < 0)
-                lv = 0;
-            if (lv > 5)
-                lv = 5; // 물 강도 단계 최대 5단 예시
-            st->water_level = lv;
-            st->water_level_override = true; // 이런 플래그 두면 좋음
-        }
     }
     else
     {

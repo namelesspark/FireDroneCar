@@ -10,17 +10,19 @@
  */
 
 typedef enum {
-    SERVO_CH_NECK_TILT = 0,
-    SERVO_CH_NECK_PAN = 1,
-    SERVO_CH_STEER =2
+    SERVO_NECK_TILT = 0,
+    SERVO_NECK_PAN = 1,
+    SERVO_STEER = 2,
+    SERVO_COUNT = 3       // 서보 개수
 } servo_id_t;
 
+// 채널 매핑 (내부용, servo_control.c에서 사용)
+#define SERVO_CH_NECK_TILT  0
+#define SERVO_CH_NECK_PAN   1
+#define SERVO_CH_STEER      2
+
 // 초기화 (PCA9685 @ /dev/i2c-1, addr 0x5f, 50Hz)
-//  0  성공
-// <0 실패
 int servo_init(void);
 
 // 특정 서보에 각도 설정 (deg)
-//  - 일반적으로 0~180 범위 사용
-//  - 바퀴 조향은 예: 45~135 사이만 쓰도록 상위에서 제한 가능
 int servo_set_angle(servo_id_t id, float angle_deg);

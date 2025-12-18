@@ -122,7 +122,7 @@ void* motor_thread_func(void* arg) {
             if (steering_angle > 135.0f) steering_angle = 135.0f;
             servo_set_angle(SERVO_STEER, steering_angle);
         }
-        usleep(20000);  // 20ms (50Hz)
+        usleep(100000);  // 20ms (50Hz) 20000
     }
     motor_stop();
     servo_set_angle(SERVO_STEER, 90.0f);  // 조향 중앙으로
@@ -214,6 +214,10 @@ int main(void) {
     printf("[메인] 시스템 가동\n");
     printf("[메인] Ctrl + C로 동작 중지\n");
 
+
+    // 초기 명령 모드 설정
+    g_state.cmd_mode = CMD_MODE_START;
+
     // 메인 루프
     while (g_running) {
         sleep(1);  // 5초마다 상태 출력
@@ -222,11 +226,10 @@ int main(void) {
         robot_mode_t mode = g_state.mode;
         float T = g_state.t_fire;
         float d = g_state.distance;
-        int wl = g_state.water_level;
         shared_state_unlock(&g_state);
         
         const char* mode_str[] = {"IDLE", "SEARCH", "DETECT", "APPROACH", "EXTINGUISH", "SAFE_STOP"};
-        printf("\n[메인] State: %s, T=%.1f°C, Dist=%.2fcm, Water=%d\n", mode_str[mode], T, d, wl);
+        printf("\n[메인] State: %s, T=%.1f°C, Dist=%.2fm\n", mode_str[mode], T, d);
     }
 
     // 스레드 종료 대기

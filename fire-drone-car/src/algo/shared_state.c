@@ -1,5 +1,3 @@
-// shared_state.c
-
 #include "shared_state.h"
 #include <pthread.h>
 
@@ -8,9 +6,6 @@ void shared_state_init(shared_state_t *state) {
 
     state->mode = MODE_IDLE;
     state->cmd_mode = CMD_MODE_NONE;
-
-    state->water_level = 0;
-    state->water_level_override = false;
     state->ext_cmd = false;
 
     state->lin_vel = 0.0f;
@@ -24,6 +19,7 @@ void shared_state_init(shared_state_t *state) {
     state->hot_col = -1;
 
     state->emergency_stop = false;
+    state->need_closer = false;
     state->error_code = 0;
 }
 

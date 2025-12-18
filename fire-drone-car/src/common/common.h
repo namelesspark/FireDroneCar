@@ -35,8 +35,6 @@ typedef struct
     cmd_mode_t cmd_mode; // 외부에서 들어온 명령 상태
 
     // 진화 관련
-    int water_level;           // 물/펌프 강도 단계 (0 ~ N)
-    bool water_level_override; // 외부에서 강도 직접 지정했는지 여부
     bool ext_cmd;              // 소화 명령 플래그
 
     // 모터 관련
@@ -53,5 +51,6 @@ typedef struct
 
     // 안전, 에러 관련
     bool emergency_stop; // 비상 정지 플래그 (E-STOP)
+    bool need_closer;   // 더 가까이 접근 필요 플래그
     int error_code;
 } shared_state_t;

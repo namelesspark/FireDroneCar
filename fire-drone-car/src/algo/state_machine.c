@@ -16,7 +16,6 @@ void state_machine_update(shared_state_t *state) {
         state->mode = MODE_SAFE_STOP;
         state->lin_vel = 0.0f;
         state->ang_vel = 0.0f;
-        state->water_level = 0;
         return;
     }
 
@@ -46,7 +45,6 @@ void state_machine_update(shared_state_t *state) {
         case MODE_SAFE_STOP:
             state->lin_vel = 0.0f;
             state->ang_vel = 0.0f;
-            state->water_level = 0;
             break;
     }
 }
@@ -61,7 +59,6 @@ void handle_idle(shared_state_t *state) {
 
     state->lin_vel = 0.0f;
     state->ang_vel = 0.0f;
-    state->water_level = 0;
 }
 
 // ===== SEARCH =====
