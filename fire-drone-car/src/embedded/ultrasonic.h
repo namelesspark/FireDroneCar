@@ -8,6 +8,18 @@ typedef struct {
     int echo_pin; //input
 }ultrasonic_t;
 
+typedef enum {
+    US_OK = 0,
+    US_ERR_NULL = -10,
+    US_ERR_WAIT_ECHO_HIGH_TIMEOUT = -11,
+    US_ERR_WAIT_ECHO_LOW_TIMEOUT  = -12,
+} us_err_t;
+
+float ultrasonic_read_distance_cm_dbg(const ultrasonic_t *sensor,
+                                      int timeout_usec,
+                                      us_err_t *out_err);
+
+                                      
 //초음파 센서 세팅 함수 (return 정상:0, 실패: <0)
 int ultrasonic_init(ultrasonic_t *sensor, int trig_pin, int echo_pin);
 
