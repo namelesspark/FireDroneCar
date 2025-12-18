@@ -8,7 +8,6 @@ static int current_level = WATER_LEVEL_MIN;
 static int retry_count = 0;
 static time_t spray_start_time = 0;
 static bool is_spraying = false;
-static bool extinguish_failed = EXTINGUISH_FAILED;
 
 
 // 초기화 및 리셋
@@ -18,7 +17,7 @@ void extinguish_init(void) {
     spray_start_time = 0;
     is_spraying = false;
 
-    printf("extinguish_init COMPLETED\n");
+    printf("[extinguish] init COMPLETED\n");
 }
 void extinguish_reset(void) {
     current_level = WATER_LEVEL_MIN;
@@ -26,7 +25,7 @@ void extinguish_reset(void) {
     spray_start_time = 0;
     is_spraying = false;
 
-    printf("extinguish_reset COMPLETED\n");
+    printf("[extinguish] reset COMPLETED\n");
 }
 
 
@@ -47,7 +46,7 @@ int run_extinguish_loop(shared_state_t *state) {
     shared_state_unlock(state);
 
     if (T < EXTINGUISH_TEMP_THRESHOLD) {// 소화 성공 판정
-        printf("run_extinguish_loop: SUCCESS! %.1f°C < %.1f°C\n",
+        printf("[extinguish] SUCCESS! %.1f°C < %.1f°C\n",
                T, EXTINGUISH_TEMP_THRESHOLD);
 
         // 펌프 정지
@@ -59,7 +58,7 @@ int run_extinguish_loop(shared_state_t *state) {
     }
 
     if (!is_spraying) { // 분사 시작
-        printf("run_extinguish_loop: SPRAY START - 강도: %d/%d\n",
+        printf("[extinguish] SPRAY START - 강도: %d/%d\n",
                current_level, WATER_LEVEL_MAX);
 
         set_water_level(state, current_level);
@@ -73,17 +72,21 @@ int run_extinguish_loop(shared_state_t *state) {
     time_t now = time(NULL);
     double elapsed = difftime(now, spray_start_time);
     if (elapsed < SPRAY_DURATION_SEC) {
-        return EXTINGUISH_IN_PROGRESS; // 일단 첫 시도 후 바로 실패로 판정
+        return EXTINGUISH_IN_PROGRESS;
     }
+
+    // 분사 시간 경과 - 강도 증가
+    current_level += WATER_LEVEL_STEP;
+    is_spraying = false;  // 다음 루프에서 새 강도로 분사 시작
 
     // 최대 강도 초과 체크
     if (current_level > WATER_LEVEL_MAX) {
-        printf("extinguish_logic: 강도 초과, 더 가까이 접근 필요\n");
+        printf("[extinguish] 강도 초과, 더 가까이 접근 필요\n");
         extinguish_reset();  // 강도 리셋
         return EXTINGUISH_NEED_CLOSER;  // APPROACH로 전환
     }
 
-    printf("extinguish_logic: 강도 증가: %d -> %d\n",
+    printf("[extinguish] 강도 증가: %d -> %d\n",
            current_level - WATER_LEVEL_STEP, current_level);
 
     return EXTINGUISH_IN_PROGRESS;  // 다음 강도로 재시도

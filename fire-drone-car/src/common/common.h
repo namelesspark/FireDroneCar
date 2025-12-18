@@ -2,12 +2,14 @@
 #pragma once
 
 #include <stdbool.h>
+#include <pthread.h>
 
 // 로봇 동작 모드
 typedef enum
 {
     MODE_IDLE = 0,   // 정지/대기
     MODE_SEARCH,     // 불 탐색 중
+    MODE_DETECT,     // 화재 방향 정렬 (미세 회전)
     MODE_APPROACH,   // 열원 접근 중
     MODE_EXTINGUISH, // 진화 중
     MODE_SAFE_STOP   // 비상 정지/안전 정지
@@ -25,6 +27,9 @@ typedef enum
 // 통신/알고리즘/모터 스레드가 같이 보는 공유 상태 구조체
 typedef struct
 {
+    // 뮤텍스
+    pthread_mutex_t mutex;
+    
     // 기본 상태
     robot_mode_t mode;   // 현재 로봇 모드 (SEARCH/APPROACH/EXT/SAFE 등)
     cmd_mode_t cmd_mode; // 외부에서 들어온 명령 상태
@@ -32,6 +37,7 @@ typedef struct
     // 진화 관련
     int water_level;           // 물/펌프 강도 단계 (0 ~ N)
     bool water_level_override; // 외부에서 강도 직접 지정했는지 여부
+    bool ext_cmd;              // 소화 명령 플래그
 
     // 모터 관련
     float lin_vel;

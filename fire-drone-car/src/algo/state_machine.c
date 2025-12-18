@@ -119,8 +119,11 @@ void state_detect_handler(shared_state_t *state) {
     // DETECT: 화재 방향으로 중앙 정렬
     shared_state_lock(state);
     float T = state->t_fire;
+    int hot_row = state->hot_row;  // 수정: hot_row 선언 추가
     int hot_col = state->hot_col;
     shared_state_unlock(state);
+    
+    (void)T;  // unused warning 방지
     
     // 화재 방향 확인
     if (hot_row >= 0 && hot_col >= 0) {
@@ -143,8 +146,6 @@ void state_approach_handler(shared_state_t *state) {
     shared_state_lock(state);
     float T = state->t_fire;
     float d = state->distance;
-    int hot_row = state->hot_row;
-    int hot_col = state->hot_col;
     shared_state_unlock(state);
     
     // 화재 소실 확인
@@ -158,7 +159,7 @@ void state_approach_handler(shared_state_t *state) {
     
     // 소화 거리 도달 확인
     if (d < APPROACH_DISTANCE && T > FIRE_APPROACH_THRESHOLD) {
-        printf("[state_machine] 소화 거리 도달 (d=%.2fm, T=%.1f) → EXTINGUISH\n", d, T);
+        printf("[state_machine] 소화 거리 도달 (d=%.2fcm, T=%.1f) → EXTINGUISH\n", d, T);
         shared_state_lock(state);
         state->mode = MODE_EXTINGUISH;
         shared_state_unlock(state);
@@ -168,7 +169,7 @@ void state_approach_handler(shared_state_t *state) {
     // 화재 방향으로 접근 (navigation.c에 구현)
     compute_approach_motion(state);
     
-    printf("[state_machine] APPROACH: 접근 중 (d=%.2fm, T=%.1f)\n", d, T);
+    printf("[state_machine] APPROACH: 접근 중 (d=%.2fcm, T=%.1f)\n", d, T);
 }
 
 void state_extinguish_handler(shared_state_t *state) {

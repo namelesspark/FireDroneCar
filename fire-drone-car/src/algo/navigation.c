@@ -1,4 +1,4 @@
-// navigatin.c
+// navigation.c
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,7 +8,7 @@
 // embedded ultrasonic.h, motor_control 헤더 포함 필요함
 
 void navigation_init(void) {
-
+    printf("[navigation] init COMPLETED\n");
 }
 
 
