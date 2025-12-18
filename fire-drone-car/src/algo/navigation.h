@@ -5,7 +5,6 @@
 #include "../common/common.h"
 #include "shared_state.h"
 
-// 속도/조향 상수
 #define SEARCH_LINEAR_VEL       0.2f
 #define SEARCH_STEER_ANGLE      0.6f
 
@@ -15,23 +14,18 @@
 #define APPROACH_LINEAR_VEL     0.15f
 #define APPROACH_STEER_GAIN     0.1f
 
-// 열화상 센서 (16x12)
 #define THERMAL_CENTER_COL      8
-
-// 중앙 정렬 허용 오차 (픽셀)
 #define CENTER_TOLERANCE        2
-
-// 장애물 거리 (m)
 #define OBSTACLE_DISTANCE       0.30f
 
 void navigation_init(void);
+void navigation_reset_detect(void);  // 추가
+void navigation_reset_avoid(void);   // 추가
 
-// 주의: 모든 함수는 lock이 잡힌 상태에서 호출됨
 void compute_search_motion(shared_state_t *state);
-bool compute_detect_motion(shared_state_t *state);  // true = 정렬 완료
+bool compute_detect_motion(shared_state_t *state);
 void compute_approach_motion(shared_state_t *state);
 
-// 머리 상하 스캔 (search에서 호출)
 void update_neck_scan(void);
 float get_current_neck_tilt(void);
 

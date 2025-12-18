@@ -63,32 +63,43 @@ void handle_idle(shared_state_t *state) {
 
 // ===== SEARCH =====
 void handle_search(shared_state_t *state) {
-    // 열원 감지 → DETECT
     if (state->t_fire > FIRE_DETECT_THRESHOLD || state->dT > DELTA_TEMP_THRESHOLD) {
         printf("[SM] SEARCH → DETECT (T=%.1f, dT=%.1f)\n", state->t_fire, state->dT);
+        navigation_reset_avoid();   // 회피 상태 리셋
+        navigation_reset_detect();  // DETECT 상태 리셋
         state->mode = MODE_DETECT;
         return;
     }
-
-    // 전진하며 탐색
     compute_search_motion(state);
 }
 
+
 // ===== DETECT: 전진하며 열원 중앙 정렬 =====
+// state_machine.c
+
 void handle_detect(shared_state_t *state) {
     // 열원 소실 → SEARCH
     if (state->t_fire < FIRE_LOST_THRESHOLD) {
         printf("[SM] DETECT → SEARCH (열원 소실)\n");
+        navigation_reset_detect();
         state->mode = MODE_SEARCH;
         return;
     }
 
-    // 전진하며 정렬
+    // 200도 이상이면 바로 APPROACH (정렬 생략)
+    if (state->t_fire >= FIRE_APPROACH_THRESHOLD) {
+        printf("[SM] DETECT → APPROACH (T=%.1f >= 200)\n", state->t_fire);
+        navigation_reset_detect();
+        state->mode = MODE_APPROACH;
+        return;
+    }
+
+    // 200도 미만이면 전진하면서 정렬 시도
     bool aligned = compute_detect_motion(state);
 
-    if (aligned) {
-        printf("[SM] DETECT → APPROACH (정렬 완료)\n");
-        state->mode = MODE_APPROACH;
+    // 정렬 안 됐어도 계속 전진
+    if (state->lin_vel == 0.0f) {
+        state->lin_vel = DETECT_LINEAR_VEL;
     }
 }
 
