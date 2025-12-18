@@ -10,10 +10,9 @@
  */
 
 typedef enum {
-    SERVO_NECK_PAN = 0,
-    SERVO_NECK_TILT,
-    SERVO_STEER,
-    SERVO_COUNT
+    SERVO_CH_NECK_TILT = 0,
+    SERVO_CH_NECK_PAN = 1,
+    SERVO_CH_STEER =2
 } servo_id_t;
 
 // 초기화 (PCA9685 @ /dev/i2c-1, addr 0x5f, 50Hz)
