@@ -8,7 +8,7 @@ ui_remote_curses.py
 윈도우:
     pip install windows-curses
 사용 예:
-    python ui_remote_curses.py --host 172.30.121.144 --port 5000
+    python ui_remote.py --host 172.30.121.144 --port 5000
 """
 
 import socket
@@ -23,7 +23,6 @@ def parse_status_line(line: str) -> dict:
     state = {
         "raw": line.strip(),
         "MODE": "?",
-        "WLV": None,
         "T_FIRE": None,
         "DT": None,
         "D": None,
@@ -43,8 +42,6 @@ def parse_status_line(line: str) -> dict:
 
             if key == "MODE":
                 state["MODE"] = val
-            elif key == "WLV":
-                state["WLV"] = int(val)
             elif key in ("T_FIRE", "TFIRE", "T"):
                 state["T_FIRE"] = float(val)
             elif key == "DT":
@@ -102,7 +99,6 @@ class RemoteUI:
             while self.running:
                 data = self.sock.recv(4096)
                 if not data:
-                    # 연결 끊김
                     with self.lock:
                         self.latest_state = {"raw": "[disconnected]"}
                     self.running = False
@@ -135,35 +131,26 @@ class RemoteUI:
     # -------- curses 관련 --------
 
     def draw(self, stdscr):
-        """
-        curses 메인 루프.
-        - 이 함수가 화면 전체 그리기 + 키 입력 처리를 전담.
-        - recv_thread는 latest_state만 업데이트.
-        """
-        curses.curs_set(1)        # 커서 표시
-        stdscr.nodelay(True)      # getch 비블록
-        stdscr.timeout(100)       # 100ms마다 wake
+        curses.curs_set(1)
+        stdscr.nodelay(True)
+        stdscr.timeout(100)
 
         while True:
             stdscr.erase()
             max_y, max_x = stdscr.getmaxyx()
 
-            # 상태 읽기
             with self.lock:
                 st = dict(self.latest_state) if self.latest_state else None
 
-            # 상단: 연결 상태 / 호스트 정보
             title = f"FireDroneCar Remote UI  |  {self.host}:{self.port}"
             stdscr.addstr(0, 0, title[:max_x - 1])
 
             stdscr.hline(1, 0, "-", max_x)
 
-            # 상태 표시
             if st is None:
                 stdscr.addstr(2, 0, "상태 수신 대기 중...", curses.A_DIM)
             else:
                 mode = st.get("MODE", "?")
-                wlv = st.get("WLV")
                 t_fire = st.get("T_FIRE")
                 dT = st.get("DT")
                 dist = st.get("D")
@@ -171,7 +158,7 @@ class RemoteUI:
                 hot_c = st.get("HOT_COL")
                 estop = st.get("ESTOP")
 
-                stdscr.addstr(2, 0, f"MODE : {mode:<10}   WLV : {wlv if wlv is not None else '?'}")
+                stdscr.addstr(2, 0, f"MODE : {mode:<10}")
                 if t_fire is not None and dT is not None:
                     stdscr.addstr(3, 0, f"T_FIRE : {t_fire:6.1f} °C    ΔT : {dT:6.1f} °C")
                 else:
@@ -186,24 +173,18 @@ class RemoteUI:
                 stdscr.addstr(7, 0, f"RAW : {raw[:max_x - 6]}")
 
             stdscr.hline(max_y - 4, 0, "-", max_x)
-            stdscr.addstr(max_y - 3, 0, "명령 예시: START / STOP / ESTOP / SET_WLV 2 / EXIT")
+            stdscr.addstr(max_y - 3, 0, "명령 예시: START / STOP / ESTOP / CLEAR_ESTOP / EXIT")
 
-            # 입력 줄
             prompt = "cmd> "
             input_line = prompt + self.input_buffer
             stdscr.addstr(max_y - 1, 0, input_line[:max_x - 1])
 
-            # 커서 위치 이동
             curses.setsyx(max_y - 1, len(prompt) + len(self.input_buffer))
             stdscr.refresh()
 
-            # 종료 조건
             if not self.running:
-                # 연결이 끊긴 상태에서도 마지막으로 입력 한 번 처리하고 나갈 수 있음
-                # 여기서는 바로 break
                 break
 
-            # 키 입력 처리
             try:
                 ch = stdscr.getch()
             except KeyboardInterrupt:
@@ -212,7 +193,6 @@ class RemoteUI:
             if ch == -1:
                 continue
 
-            # 엔터
             if ch in (curses.KEY_ENTER, 10, 13):
                 cmd = self.input_buffer.strip()
                 if cmd:
@@ -224,50 +204,38 @@ class RemoteUI:
                 self.input_buffer = ""
                 continue
 
-            # 백스페이스
             if ch in (curses.KEY_BACKSPACE, 127, 8):
                 if self.input_buffer:
                     self.input_buffer = self.input_buffer[:-1]
                 continue
 
-            # 기타 문자 입력
-            if 32 <= ch <= 126:  # printable ASCII
+            if 32 <= ch <= 126:
                 self.input_buffer += chr(ch)
                 continue
 
-            # 그 외 키는 무시
             continue
-
-        # 루프 종료 시
-        self.close()
-
-
-def curses_main(stdscr, ui: RemoteUI):
-    ui.draw(stdscr)
 
 
 def main():
-    parser = argparse.ArgumentParser(description="FireDroneCar remote UI (curses)")
-    parser.add_argument("--host", default="172.30.121.144",
-                        help="라즈베리파이 IP 주소 (default: 127.0.0.1)")
-    parser.add_argument("--port", type=int, default=5000,
-                        help="포트 번호 (default: 5000)")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--host", required=True)
+    parser.add_argument("--port", type=int, default=5000)
     args = parser.parse_args()
 
     ui = RemoteUI(args.host, args.port)
-
     try:
         ui.connect()
     except Exception as e:
         print(f"[connect error] {e}")
-        return
+        sys.exit(1)
 
-    # 수신 스레드 시작 (상태만 갱신)
     t = threading.Thread(target=ui.recv_loop, daemon=True)
     t.start()
 
-    # curses UI 시작
-    curses.wrapper(curses_main, ui)
+    try:
+        curses.wrapper(ui.draw)
+    finally:
+        ui.close()
 
 
 if __name__ == "__main__":
