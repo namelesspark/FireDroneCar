@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <stdbool.h>
+#include <wiringPi.h>
 
 #include "../common/common.h"
 #include "../comm_ui/comm_ui.h"
@@ -64,11 +65,13 @@ void* sensor_thread_func(void* arg) {
 
         // 초음파 센서 읽기
         // 수정: dis_cm -> dist_cm 통일
+
         float dist_cm = ultrasonic_read_distance_cm_avg(&us, 3, 30000);
         if (dist_cm > 0) {
             shared_state_lock(&g_state);
-            g_state.distance = dist_cm;
+            g_state.distance = dist_cm/100;
             shared_state_unlock(&g_state);
+
         }
 
         usleep(100000);  // 100ms (10Hz) - 센서 읽기 주기
@@ -132,6 +135,12 @@ int main(void) {
     printf("        FireDroneCar 구동 시작           \n");
     printf("========================================\n");
     printf("========================================\n");
+
+    if (wiringPiSetupGpio() == -1) {
+        printf("[메인] wiringPiSetupGpio failed\n");
+        return 1;
+    }
+    printf("[메인] wiringPi GPIO setup OK (BCM numbering)\n");
 
     // Signal 핸들러 등록
     signal(SIGINT, signal_handler);
@@ -206,7 +215,7 @@ int main(void) {
 
     // 메인 루프
     while (g_running) {
-        sleep(5);  // 5초마다 상태 출력
+        sleep(1);  // 5초마다 상태 출력
         
         shared_state_lock(&g_state);
         robot_mode_t mode = g_state.mode;

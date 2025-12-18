@@ -23,3 +23,5 @@ void state_detect_handler(shared_state_t *state);
 void state_approach_handler(shared_state_t *state);
 void state_extinguish_handler(shared_state_t *state);
 void state_safe_stop_handler(shared_state_t *state);
+
+#endif
