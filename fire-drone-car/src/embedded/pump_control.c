@@ -1,68 +1,69 @@
-
 #include "pump_control.h"
-
 #include <stdio.h>
-#include <wiringPi.h>
+#include <wiringPiI2C.h>
+#include <unistd.h>
 
-static int g_inited = 0;
+// 네 코드 그대로 유지
+#define PCA9685_ADDR 0x5F
+#define MODE1 0x00
+#define LED0_ON_L 0x06
+#define PRESCALE 0xFE
 
-static void write_relay(int on)
+static int pca_fd = -1;
+
+static void pca9685_setPWM(int channel, int on, int off)
 {
-#if PUMP_ACTIVE_HIGH
-    digitalWrite(PUMP_GPIO, on ? HIGH : LOW);
-#else
-    digitalWrite(PUMP_GPIO, on ? LOW : HIGH);
-#endif
+    int base_reg = LED0_ON_L + 4 * channel;
+
+    wiringPiI2CWriteReg8(pca_fd, base_reg,     on & 0xFF);
+    wiringPiI2CWriteReg8(pca_fd, base_reg + 1, on >> 8);
+    wiringPiI2CWriteReg8(pca_fd, base_reg + 2, off & 0xFF);
+    wiringPiI2CWriteReg8(pca_fd, base_reg + 3, off >> 8);
+}
+
+static void pca9685_init(void)
+{
+    pca_fd = wiringPiI2CSetup(PCA9685_ADDR);
+    if (pca_fd < 0) {
+        printf("I2C setup failed\n");
+        return;
+    }
+
+    // Reset
+    wiringPiI2CWriteReg8(pca_fd, MODE1, 0x00);
+    usleep(5000);
+
+    // Set PWM frequency to 50Hz
+    wiringPiI2CWriteReg8(pca_fd, MODE1, 0x10);     // Sleep
+    wiringPiI2CWriteReg8(pca_fd, PRESCALE, 0x79);  // 50Hz
+    wiringPiI2CWriteReg8(pca_fd, MODE1, 0x00);     // Wake
+    usleep(5000);
+    wiringPiI2CWriteReg8(pca_fd, MODE1, 0x80);     // Restart
 }
 
 int pump_init(void)
 {
-    if (g_inited) return 0;
+    if (pca_fd >= 0) return 0;
 
-    if (wiringPiSetupGpio() != 0) {
-        fprintf(stderr, "[pump] wiringPiSetupGpio() failed\n");
+    printf("Initializing PCA9685...\n");
+    pca9685_init();
+
+    if (pca_fd < 0) {
         return -1;
     }
-
-    pinMode(PUMP_GPIO, OUTPUT);
-    write_relay(0);
-
-    g_inited = 1;
-
-    printf("[pump] init OK (GPIO%d, relay %s)\n",
-           PUMP_GPIO,
-#if PUMP_ACTIVE_HIGH
-           "active-high"
-#else
-           "active-low"
-#endif
-    );
     return 0;
 }
 
 void pump_on(void)
 {
-    if (!g_inited) return;
-    write_relay(1);
+    if (pca_fd < 0) return;
+    printf("Pump ON\n");
+    pca9685_setPWM(PUMP_CHANNEL, 0, 4095);
 }
 
 void pump_off(void)
 {
-    if (!g_inited) return;
-    write_relay(0);
-}
-
-void pump_set_level(int level)
-{
-    if (level <= 0) pump_off();
-    else            pump_on();
-}
-
-void pump_apply(bool emergency_stop, int water_level)
-{
-    if (emergency_stop) {
-        pump_off();
-        return;
-    }
-    pump_set_level(water_level);
+    if (pca_fd < 0) return;
+    printf("Pump OFF\n");
+    pca9685_setPWM(PUMP_CHANNEL, 0, 0);
 }

@@ -1,19 +1,20 @@
-#pragma once
+#ifndef PUMP_CONTROL_H
+#define PUMP_CONTROL_H
 
-#include <stdbool.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#define PUMP_GPIO 18
+// 네 코드 그대로: PCA9685 채널 4 사용
+#define PUMP_CHANNEL 4  // 서보 포트 4번
 
-#define PUMP_ACTIVE_HIGH 1
-
-#define PUMP_MAX_LEVEL 5
-
-int  pump_init(void);
-
-// 펌프 ON/OFF
+// 초기화/제어 API
+int pump_init(void);
 void pump_on(void);
 void pump_off(void);
 
-void pump_set_level(int level);
+#ifdef __cplusplus
+}
+#endif
 
-void pump_apply(bool emergency_stop, int water_level);
+#endif // PUMP_CONTROL_H

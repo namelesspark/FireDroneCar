@@ -21,7 +21,6 @@
 #include <sys/ioctl.h>
 #include <linux/i2c-dev.h>
 
-// I2C & PCA9685 설정
 #ifndef SERVO_I2C_DEV
 #define SERVO_I2C_DEV "/dev/i2c-1"
 #endif
@@ -32,9 +31,8 @@
 
 #define PCA9685_FREQ_HZ    50.0f  // 서보 표준
 
-// 서보 채널 매핑 (실제 연결에 맞게 수정!)
-#define SERVO_CH_NECK_PAN   0
-#define SERVO_CH_NECK_TILT  1
+#define SERVO_CH_NECK_PAN   1
+#define SERVO_CH_NECK_TILT  0
 #define SERVO_CH_STEER      2
 
 // 서보 펄스 폭 설정 (us)
