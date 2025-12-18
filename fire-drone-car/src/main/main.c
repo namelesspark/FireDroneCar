@@ -86,12 +86,13 @@ void* sensor_thread_func(void* arg) {
 // 알고리즘 스레드
 void* algo_thread_func(void* arg) {
     (void)arg;
-
     printf("[algo_thread] STARTED\n");
 
     while(g_running) {
-        state_machine_update(&g_state);
-        usleep(50000); // 50ms = 20Hz 이 시간마다 갱신
+        shared_state_lock(&g_state);     // 여기서 lock
+        state_machine_update(&g_state);  // 내부에서 lock 안 함
+        shared_state_unlock(&g_state);   // 여기서 unlock
+        usleep(50000);
     }
 
     printf("[algo_thread] STOPPED\n");
