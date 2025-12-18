@@ -122,7 +122,7 @@ void* motor_thread_func(void* arg) {
             if (steering_angle > 135.0f) steering_angle = 135.0f;
             servo_set_angle(SERVO_STEER, steering_angle);
         }
-        usleep(100000);  // 20ms (50Hz) 20000
+        usleep(20000);  // 20ms (50Hz) 20000
     }
     motor_stop();
     servo_set_angle(SERVO_STEER, 90.0f);  // 조향 중앙으로

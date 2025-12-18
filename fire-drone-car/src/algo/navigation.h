@@ -5,10 +5,13 @@
 #include "../common/common.h"
 #include "shared_state.h"
 
-#define SEARCH_LINEAR_VEL       0.2f
-#define SEARCH_STEER_ANGLE      0.6f
+#define SEARCH_LINEAR_VEL       0.20f
+#define SEARCH_STEER_ANGLE      0.0f
 
-#define DETECT_LINEAR_VEL       0.08f
+#define AVOID_REVERSE_STEER_ANGLE  0.0f   // 후진은 보통 핸들 고정(원하면 값 줘도 됨)
+#define AVOID_TURN_STEER_ANGLE     1.0f
+
+#define DETECT_LINEAR_VEL       0.12f
 #define DETECT_STEER_GAIN       0.15f
 
 #define APPROACH_LINEAR_VEL     0.15f

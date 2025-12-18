@@ -7,7 +7,7 @@
 
 // 온도 임계값 (°C)
 #define FIRE_DETECT_THRESHOLD      60.0f   // 열원 감지
-#define FIRE_APPROACH_THRESHOLD    200.0f  // 소화 시작 온도
+#define FIRE_APPROACH_THRESHOLD    180.0f  // 소화 시작 온도
 #define FIRE_LOST_THRESHOLD        35.0f   // 열원 소실 판정
 #define DELTA_TEMP_THRESHOLD       15.0f   // dT 감지 임계값
 

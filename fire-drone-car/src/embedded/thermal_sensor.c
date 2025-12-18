@@ -116,8 +116,13 @@ int thermal_sensor_read(thermal_data_t *out)
 
     out->T_env   = sum / (float)THERMAL_PIXELS;
     out->T_fire  = t_max;
-    out->hot_row = max_r;
-    out->hot_col = max_c;
+    if (t_max < 50.0f) {
+        out->hot_row = -1;
+        out->hot_col = -1;
+    } else {
+        out->hot_row = max_r;
+        out->hot_col = max_c;
+    }
 
     return 0;
 }
