@@ -55,6 +55,47 @@ float ultrasonic_read_distance_cm(const ultrasonic_t *sensor, int timeout_usec){
     return distance_cm;
 }
 
+float ultrasonic_read_distance_cm_dbg(const ultrasonic_t *sensor,
+                                      int timeout_usec,
+                                      us_err_t *out_err)
+{
+    if (!sensor) { if(out_err) *out_err = US_ERR_NULL; return -1.0f; }
+
+    int trig = sensor->trig_pin;
+    int echo = sensor->echo_pin;
+
+    digitalWrite(trig, LOW);
+    delayMicroseconds(2);
+
+    digitalWrite(trig, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(trig, LOW);
+
+    unsigned int start_wait = micros();
+    while (digitalRead(echo) == LOW) {
+        if ((int)(micros() - start_wait) > timeout_usec) {
+            if(out_err) *out_err = US_ERR_WAIT_ECHO_HIGH_TIMEOUT;
+            return -1.0f;
+        }
+    }
+
+    unsigned int pulse_start = micros();
+    while (digitalRead(echo) == HIGH) {
+        if ((int)(micros() - pulse_start) > timeout_usec) {
+            if(out_err) *out_err = US_ERR_WAIT_ECHO_LOW_TIMEOUT;
+            return -1.0f;
+        }
+    }
+    unsigned int pulse_end = micros();
+
+    unsigned int pulse_duration = pulse_end - pulse_start;
+    float distance_cm = (pulse_duration * SPEED_OF_SOUND_CM_PER_USEC) / 2.0f;
+
+    if(out_err) *out_err = US_OK;
+    return distance_cm;
+}
+
+
 float ultrasonic_read_distance_cm_avg(const ultrasonic_t *sensor, int samples,int timeout_usec)
 {
     if (sensor == NULL || samples <= 0) return -1.0f;

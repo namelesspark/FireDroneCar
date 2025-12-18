@@ -20,7 +20,7 @@ int thermal_sensor_init(void)
     int status;
 
     MLX90641_I2CInit();
-    MLX90641_I2CFreqSet(400);
+    MLX90641_I2CFreqSet(100);
 
     // EEPROM dump
     status = MLX90641_DumpEE(MLX90641_I2C_ADDR, g_eeprom);
@@ -59,9 +59,17 @@ int thermal_sensor_read(thermal_data_t *out)
 
     //프레임 두번 읽어서 안정화 
     for (int i = 0; i < 2; ++i) {
-        int status = MLX90641_GetFrameData(MLX90641_I2C_ADDR, g_frame);
+            int status = -1;
+
+        // 최대 ~1초(200 * 5ms) 기다리면서 프레임 준비될 때까지 재시도
+        for (int tries = 0; tries < 200; ++tries) {
+            status = MLX90641_GetFrameData(MLX90641_I2C_ADDR, g_frame);
+            if (status == 0) break;
+            usleep(5000); // 5ms
+        }
+
         if (status != 0) {
-            fprintf(stderr, "[thermal_sensor] GetFrameData failed: %d\n", status);
+            fprintf(stderr, "[thermal_sensor] GetFrameData timeout/fail: %d\n", status);
             return -3;
         }
     }
