@@ -3,9 +3,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <unistd.h>  // usleep 사용을 위해 추가
 
-#include "MLX90641_API.h"
-#include "MLX90641_I2C_Driver.h"
+#include "mlx90641/MLX90641_API.h"
+#include "mlx90641/MLX90641_I2C_Driver.h"
 
 #define MLX90641_I2C_ADDR  0x33
 #define TA_SHIFT 8
