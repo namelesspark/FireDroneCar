@@ -8,6 +8,7 @@ typedef enum
 {
     MODE_IDLE = 0,   // 정지/대기
     MODE_SEARCH,     // 불 탐색 중
+    MODE_DETECT,     // 화재 방향 정렬 (미세 회전)
     MODE_APPROACH,   // 열원 접근 중
     MODE_EXTINGUISH, // 진화 중
     MODE_SAFE_STOP   // 비상 정지/안전 정지
@@ -25,6 +26,9 @@ typedef enum
 // 통신/알고리즘/모터 스레드가 같이 보는 공유 상태 구조체
 typedef struct
 {
+    // 뮤텍스
+    pthread_mutex_t mutex;
+
     // 기본 상태
     robot_mode_t mode;   // 현재 로봇 모드 (SEARCH/APPROACH/EXT/SAFE 등)
     cmd_mode_t cmd_mode; // 외부에서 들어온 명령 상태
@@ -32,15 +36,22 @@ typedef struct
     // 진화 관련
     int water_level;           // 물/펌프 강도 단계 (0 ~ N)
     bool water_level_override; // 외부에서 강도 직접 지정했는지 여부
+    bool ext_cmd; // 소화 명령 플래그
+
+    // 모터 관련
+    float lin_vel;  // 선속도 (m/s)
+    float ang_vel;  // 각속도 (rad/s)
 
     // 센서 데이터
     float t_fire;   // 열원 온도 추정값 (°C)
     float dT;       // 주변 대비 온도 차이 (°C)
-    float distance; // 초음파 거리 (m 또는 cm, 너희 정의대로)
+    float distance; // 초음파 거리
 
     int hot_row; // 열화상 센서에서 가장 뜨거운 픽셀의 행
     int hot_col; // 열화상 센서에서 가장 뜨거운 픽셀의 열
 
     // 안전 관련
     bool emergency_stop; // 비상 정지 플래그 (E-STOP)
+    int error_code;
+
 } shared_state_t;
