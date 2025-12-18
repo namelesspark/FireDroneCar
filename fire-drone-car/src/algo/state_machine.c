@@ -11,8 +11,7 @@ void state_machine_init(void) {
     printf("state machine initialized.\n");
 }
 
-void state_machine_update(shared_state_t *state, pthread_mutex_t *mutex) {
-    
+void state_machine_update(shared_state_t *state) {
     shared_state_lock(state);
     robot_mode_t current_mode = state->mode;
     bool emergency = state->emergency_stop;
@@ -64,11 +63,9 @@ void state_machine_update(shared_state_t *state, pthread_mutex_t *mutex) {
             break;
             
         default:
-            printf("[state_machine] ERROR: 알 수 없는 모드 %d\n", current_mode);
+            printf("[state_machine] 오류: 정의되지 않은 모드 %d\n", current_mode);
             break;
     }
-
-    pthread_mutex_unlock(mutex);
 }
 
 
@@ -97,7 +94,7 @@ void state_idle_handler(shared_state_t *state) {
 }
 
 void state_search_handler(shared_state_t *state) {
-    // SEARCH: 360도 회전하며 화재 탐색
+    // SEARCH: 제자리 회전하는 로직
     shared_state_lock(state);
     float T = state->t_fire;
     float dT = state->dT;
@@ -119,10 +116,9 @@ void state_search_handler(shared_state_t *state) {
 }
 
 void state_detect_handler(shared_state_t *state) {
-    // DETECT: 화재 방향 확인 후 접근 시작
+    // DETECT: 화재 방향으로 중앙 정렬
     shared_state_lock(state);
     float T = state->t_fire;
-    int hot_row = state->hot_row;
     int hot_col = state->hot_col;
     shared_state_unlock(state);
     

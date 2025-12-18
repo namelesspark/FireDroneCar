@@ -21,13 +21,8 @@ void compute_search_motion(shared_state_t *state) {
         return;
     }
 
-    // 제자리 회전 (lin_vel=0, ang_vel=회전속도)
-    shared_state_lock(state);
-    state->lin_vel = 0.0f;
-    state->ang_vel = SEARCH_ANGULAR_VEL;
-    shared_state_unlock(state);
-
-    // motor_set_velocity(0.0f, SEARCH_ANGULAR_VEL); 같은걸로 방향 지정하면 될듯
+    // 천천히 전진하며 회전
+    shared_state_set_velocity(state, 0.1f, SEARCH_ANGULAR_VEL);
 }
 
 // DETECT 상태
@@ -125,3 +120,4 @@ bool check_obstacle(shared_state_t *state) {
     }
     return false;  // 장애물 없음
 }
+
