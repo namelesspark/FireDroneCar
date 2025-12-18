@@ -1,8 +1,8 @@
-
 // comm.c
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h> // strcasecmp
 #include <stdbool.h>
 #include <unistd.h>
 #include <errno.h>
@@ -21,8 +21,6 @@
 #define COMM_STATUS_INTERVAL_MS 200 // 상태 전송 주기 (ms)
 #define COMM_RECV_BUF_SIZE 1024
 
-
-
 // ----------------------
 // 내부 함수 프로토타입
 // ----------------------
@@ -31,7 +29,8 @@ static void comm_format_status_line(char *buf, size_t size,
                                     const shared_state_t *st);
 static void comm_handle_command_line(const char *line,
                                      shared_state_t *st,
-                                     pthread_mutex_t *mtx);
+                                     pthread_mutex_t *mtx,
+                                     volatile bool *shutdown_flag);
 static long long now_ms(void);
 
 // ----------------------
@@ -62,7 +61,7 @@ void *comm_thread(void *arg)
     size_t recv_len = 0;
     long long last_status_ms = now_ms();
 
-    while (1)
+    while (ctx->shutdown_flag == NULL || *(ctx->shutdown_flag))
     {
         fd_set readfds;
         FD_ZERO(&readfds);
@@ -85,9 +84,7 @@ void *comm_thread(void *arg)
         if (ret < 0)
         {
             if (errno == EINTR)
-            {
                 continue;
-            }
             perror("[comm] select");
             break;
         }
@@ -110,7 +107,8 @@ void *comm_thread(void *arg)
                     close(client_fd);
                 }
                 client_fd = new_fd;
-                printf("[comm] client connected: %s:%d\n", inet_ntoa(cliaddr.sin_addr), ntohs(cliaddr.sin_port));
+                printf("[comm] client connected: %s:%d\n",
+                       inet_ntoa(cliaddr.sin_addr), ntohs(cliaddr.sin_port));
             }
         }
 
@@ -136,7 +134,7 @@ void *comm_thread(void *arg)
                     // 오버플로 방지: 버퍼 리셋
                     recv_len = 0;
                 }
-                memcpy(recv_buf + recv_len, buf, n);
+                memcpy(recv_buf + recv_len, buf, (size_t)n);
                 recv_len += (size_t)n;
 
                 // '\n' 단위로 파싱
@@ -149,7 +147,7 @@ void *comm_thread(void *arg)
                         if (i > start)
                         {
                             const char *line = recv_buf + start;
-                            comm_handle_command_line(line, ctx->state, ctx->state_mutex);
+                            comm_handle_command_line(line, ctx->state, ctx->state_mutex, ctx->shutdown_flag);
                         }
                         start = i + 1;
                     }
@@ -169,19 +167,34 @@ void *comm_thread(void *arg)
 
         // 상태 전송
         long long now = now_ms();
-        if (client_fd >= 0 &&
-            now - last_status_ms >= COMM_STATUS_INTERVAL_MS)
+        if (client_fd >= 0 && (now - last_status_ms >= COMM_STATUS_INTERVAL_MS))
         {
-
             char line[256];
 
+            // NOTE: shared_state_t 안에 pthread_mutex_t가 포함되어 있어
+            //       구조체 전체를 통째로 복사하면(=mutex copy) UB가 될 수 있음.
+            //       필요한 필드만 스냅샷으로 안전하게 복사한다.
+            shared_state_t snapshot = {0};
             pthread_mutex_lock(ctx->state_mutex);
-            shared_state_t snapshot = *(ctx->state); // 잠깐 복사
+            snapshot.mode = ctx->state->mode;
+            snapshot.cmd_mode = ctx->state->cmd_mode;
+            snapshot.ext_cmd = ctx->state->ext_cmd;
+            snapshot.lin_vel = ctx->state->lin_vel;
+            snapshot.ang_vel = ctx->state->ang_vel;
+            snapshot.t_fire = ctx->state->t_fire;
+            snapshot.dT = ctx->state->dT;
+            snapshot.distance = ctx->state->distance;
+            snapshot.hot_row = ctx->state->hot_row;
+            snapshot.hot_col = ctx->state->hot_col;
+            snapshot.emergency_stop = ctx->state->emergency_stop;
+            snapshot.need_closer = ctx->state->need_closer;
+            snapshot.error_code = ctx->state->error_code;
             pthread_mutex_unlock(ctx->state_mutex);
 
             comm_format_status_line(line, sizeof(line), &snapshot);
             size_t len = strlen(line);
             line[len++] = '\n';
+
             ssize_t s = send(client_fd, line, len, 0);
             if (s < 0)
             {
@@ -191,14 +204,10 @@ void *comm_thread(void *arg)
             }
             last_status_ms = now;
         }
-
-        // TODO: 종료 조건 필요 시 break 처리
     }
 
     if (client_fd >= 0)
-    {
         close(client_fd);
-    }
     close(server_fd);
     return NULL;
 }
@@ -227,7 +236,7 @@ static int comm_setup_server_socket(int port)
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    addr.sin_port = htons(port);
+    addr.sin_port = htons((uint16_t)port);
 
     if (bind(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0)
     {
@@ -248,14 +257,11 @@ static int comm_setup_server_socket(int port)
 
 // ----------------------
 // 상태 문자열 포맷
-//   예) MODE=EXT;T_FIRE=123.4;DT=30.2;D=0.35;HOT=4,7
+//   예) MODE=EXT;T_FIRE=123.4;DT=30.2;D=0.35;HOT=4,7;ESTOP=0
 // ----------------------
 static void comm_format_status_line(char *buf, size_t size,
                                     const shared_state_t *st)
 {
-    // 아래 필드/enum 이름은 예시이므로
-    // 네가 정의한 shared_state_t에 맞게 수정하면 됨.
-
     const char *mode_str = "UNKNOWN";
     switch (st->mode)
     {
@@ -264,6 +270,9 @@ static void comm_format_status_line(char *buf, size_t size,
         break;
     case MODE_SEARCH:
         mode_str = "SEARCH";
+        break;
+    case MODE_DETECT:
+        mode_str = "DETECT";
         break;
     case MODE_APPROACH:
         mode_str = "APPROACH";
@@ -290,18 +299,17 @@ static void comm_format_status_line(char *buf, size_t size,
 
 // ----------------------
 // 한 줄 명령 처리
-//   ex)
-//     "START"
-//     "STOP"
-//     "ESTOP"
+//   지원 명령:
+//     START / STOP / MANUAL / ESTOP / CLEAR_ESTOP / EXIT
 // ----------------------
 static void comm_handle_command_line(const char *line,
                                      shared_state_t *st,
-                                     pthread_mutex_t *mtx)
+                                     pthread_mutex_t *mtx,
+                                     volatile bool *shutdown_flag)
 {
     printf("[comm] recv cmd: '%s'\n", line);
 
-    // 앞뒤 공백 제거
+    // 앞쪽 공백 제거
     while (*line == ' ' || *line == '\t')
         line++;
     if (*line == '\0')
@@ -311,7 +319,7 @@ static void comm_handle_command_line(const char *line,
 
     if (strcasecmp(line, "START") == 0)
     {
-        st->cmd_mode = CMD_MODE_START; // 실제 enum 이름에 맞게 수정
+        st->cmd_mode = CMD_MODE_START;
     }
     else if (strcasecmp(line, "STOP") == 0)
     {
@@ -325,9 +333,25 @@ static void comm_handle_command_line(const char *line,
     {
         st->emergency_stop = true;
     }
+    else if (strcasecmp(line, "CLEAR_ESTOP") == 0 || strcasecmp(line, "CESTOP") == 0)
+    {
+        st->emergency_stop = false;
+        // 안전하게 IDLE로 복귀
+        st->mode = MODE_IDLE;
+        st->cmd_mode = CMD_MODE_NONE;
+        st->lin_vel = 0.0f;
+        st->ang_vel = 0.0f;
+    }
+    else if (strcasecmp(line, "EXIT") == 0 || strcasecmp(line, "QUIT") == 0)
+    {
+        // 원격 UI에서 종료 요청
+        st->cmd_mode = CMD_MODE_STOP;
+        if (shutdown_flag)
+            *shutdown_flag = false;
+    }
     else
     {
-        // TODO: 필요하면 더 많은 명령 추가 (예: MODE=SEARCH 등)
+        // 알 수 없는 명령은 무시
     }
 
     pthread_mutex_unlock(mtx);
@@ -342,4 +366,3 @@ static long long now_ms(void)
     gettimeofday(&tv, NULL);
     return (long long)tv.tv_sec * 1000LL + tv.tv_usec / 1000;
 }
-

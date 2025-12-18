@@ -57,15 +57,13 @@ void* sensor_thread_func(void* arg) {
         static int count = 0;
         if (++count >= 10) {
             // 수정: thermal.Tfire -> thermal.T_fire, thermal.Tenv -> thermal.T_env
-            printf("[sensor] T_fire: %.1f도, dT: %.1f, 열: (%d, %d)\n", 
-                   thermal.T_fire, thermal.T_fire - thermal.T_env, 
+            printf("[sensor] T_fire: %.1f도, dT: %.1f, 열: (%d, %d)\n",
+                   thermal.T_fire, thermal.T_fire - thermal.T_env,
                    thermal.hot_row, thermal.hot_col);
             count = 0;
         }
 
         // 초음파 센서 읽기
-        // 수정: dis_cm -> dist_cm 통일
-
         float dist_cm = ultrasonic_read_distance_cm_avg(&us, 3, 30000);
         if (dist_cm > 0) {
             shared_state_lock(&g_state);
@@ -163,13 +161,13 @@ int main(void) {
         return -1;
     }
     printf("[메인] 모터 정상\n");
-    
+
     if (pump_init() != 0) {
         fprintf(stderr, "[메인] 워터 펌프 초기화 오류\n");
         return -1;
     }
     printf("[메인] 워터 펌프 정상\n");
-    
+
     if (servo_init() != 0) {
         fprintf(stderr, "[메인] 서보 모터 초기화 오류\n");
         return -1;
@@ -183,22 +181,21 @@ int main(void) {
     servo_set_angle(SERVO_STEER, 90.0f);
 
     // 스레드 생성
-    pthread_t sensor_thread, algo_thread, motor_thread;
-    //pthread_t comm_thread;
+    pthread_t sensor_thread, algo_thread, motor_thread, comm_thread_id;
+    comm_ctx_t comm_ctx;
 
-    // 수정: pthread_create 호출 추가
     if (pthread_create(&sensor_thread, NULL, sensor_thread_func, NULL) != 0) {
         fprintf(stderr, "[메인] sensor_thread 생성 실패\n");
         return -1;
     }
-    
+
     if (pthread_create(&algo_thread, NULL, algo_thread_func, NULL) != 0) {
         fprintf(stderr, "[메인] algo_thread 생성 실패\n");
         g_running = false;
         pthread_join(sensor_thread, NULL);
         return -1;
     }
-    
+
     if (pthread_create(&motor_thread, NULL, motor_thread_func, NULL) != 0) {
         fprintf(stderr, "[메인] motor_thread 생성 실패\n");
         g_running = false;
@@ -207,27 +204,43 @@ int main(void) {
         return -1;
     }
 
-    // comm_thread는 comm_ui.h의 함수 사용
-    // TODO: comm_thread 함수 구현 필요
+    // ===== 네트워크 통신 스레드 (가산점 항목)
+    // - 라즈베리파이: TCP 서버(포트 5000)
+    // - PC: ui_remote.py / client.py 로 접속
+    comm_ctx.state = &g_state;
+    comm_ctx.state_mutex = &g_state.mutex;
+    comm_ctx.shutdown_flag = &g_running;
+
+    if (pthread_create(&comm_thread_id, NULL, comm_thread, &comm_ctx) != 0) {
+        fprintf(stderr, "[메인] comm_thread 생성 실패\n");
+        g_running = false;
+        pthread_join(sensor_thread, NULL);
+        pthread_join(algo_thread, NULL);
+        pthread_join(motor_thread, NULL);
+        return -1;
+    }
 
     printf("[메인] 스레드 생성 완료\n");
     printf("[메인] 시스템 가동\n");
     printf("[메인] Ctrl + C로 동작 중지\n");
 
-
     // 초기 명령 모드 설정
-    g_state.cmd_mode = CMD_MODE_START;
+    // - 원격 UI로 START를 보내서 시작할 수 있게 기본은 NONE 유지
+    // - 바로 자율주행을 원하면 아래 줄을 CMD_MODE_START로 바꾸면 됨
+    shared_state_lock(&g_state);
+    g_state.cmd_mode = CMD_MODE_NONE;
+    shared_state_unlock(&g_state);
 
     // 메인 루프
     while (g_running) {
-        sleep(1);  // 5초마다 상태 출력
-        
+        sleep(1);
+
         shared_state_lock(&g_state);
         robot_mode_t mode = g_state.mode;
         float T = g_state.t_fire;
         float d = g_state.distance;
         shared_state_unlock(&g_state);
-        
+
         const char* mode_str[] = {"IDLE", "SEARCH", "DETECT", "APPROACH", "EXTINGUISH", "SAFE_STOP"};
         printf("\n[메인] State: %s, T=%.1f°C, Dist=%.2fm\n", mode_str[mode], T, d);
     }
@@ -237,7 +250,7 @@ int main(void) {
     pthread_join(sensor_thread, NULL);
     pthread_join(algo_thread, NULL);
     pthread_join(motor_thread, NULL);
-    // pthread_join(comm_thread, NULL);
+    pthread_join(comm_thread_id, NULL);
 
     // 정리
     motor_stop();
