@@ -1,181 +1,264 @@
+# algo/ 모듈 README
 
-# algo 폴더 - 알고리즘 모듈
-
-## 파일 구성
-
-| 파일 | 역할 |
-|------|------|
-| `shared_state.h/c` | 스레드 간 공유 데이터 관리 (뮤텍스) |
-| `state_machine.h/c` | 로봇 상태 전이 (IDLE → SEARCH → DETECT → APPROACH → EXTINGUISH) |
-| `navigation.h/c` | 주행 알고리즘 (탐색 회전, 화재 접근) |
-| `extinguish_logic.h/c` | 소화 알고리즘 (강도 1~5 단계적 분사) |
+FireDroneCar 프로젝트의 알고리즘 모듈입니다.  
+상태 머신, 내비게이션, 소화 로직을 담당합니다.
 
 ---
 
-## 로직 흐름
+## 파일 구조
 
 ```
-        ┌──────────────────────────────────────┐
-        │                                      │
-        ▼                                      │
-     [IDLE] ──(START 명령)──▶ [SEARCH]         │
-                                │              │
-                         (온도 > 50°C)         │
-                                │              │
-                                ▼              │
-                            [DETECT]           │
-                                │              │
-                         (위치 확인됨)          │
-                                │              │
-                                ▼              │
-                           [APPROACH]          │
-                                │              │
-                      (거리 < 0.5m, 온도 > 70°C)│
-                                │              │
-                                ▼              │
-                          [EXTINGUISH] ────────┘
-                                │        (소화 성공)
-                                │
-                         (최대 강도 실패)
-                                │
-                                ▼
-                      [APPROACH] (더 가까이)
-
-
-언제든 emergency_stop → [SAFE_STOP]
+algo/
+├── shared_state.h / .c    # 공유 상태 관리 (mutex 포함)
+├── state_machine.h / .c   # 6-상태 FSM
+├── navigation.h / .c      # 이동 제어 (탐색/감지/접근)
+└── extinguish_logic.h / .c # 소화 로직
 ```
 
 ---
 
-## 각 모듈 설명
+## 핵심 설계 원칙
 
-### 1. shared_state (공유 상태)
-
-모든 스레드가 같이 보는 "게시판" 역할
+### 1. Mutex는 main에서만 관리
 
 ```c
-// 사용 예시
-shared_state_lock(state);      // 잠금
-float temp = state->t_fire;    // 값 읽기
-state->lin_vel = 0.5f;         // 값 쓰기
-shared_state_unlock(state);    // 해제
-```
-
-**편의 함수도 있음**
-```c
-float temp = shared_state_get_temperature(state);  // 안전하게 읽기
-shared_state_set_velocity(state, 0.5f, 0.0f);      // 안전하게 쓰기
-```
-
----
-
-### 2. state_machine (상태 머신)
-
-`nav_thread`에서 주기적으로 호출해야함
-
-```c
-// main.c 또는 nav_thread에서
-while (running) {
-    state_machine_update(&shared_state);
-    usleep(100000);  // 100ms 주기
+// main.c의 algo_thread에서
+while(g_running) {
+    shared_state_lock(&g_state);      // ← main에서 lock
+    state_machine_update(&g_state);   // algo 내부는 lock 안 함
+    shared_state_unlock(&g_state);    // ← main에서 unlock
+    usleep(50000);
 }
 ```
 
-**임계값 (state_machine.h에서 수정 가능)**
-| 상수 | 값 | 설명 |
-|------|-----|------|
-| `FIRE_DETECT_THRESHOLD` | 50°C | 화재 감지 온도 |
-| `FIRE_APPROACH_THRESHOLD` | 70°C | 소화 시작 온도 |
-| `APPROACH_DISTANCE` | 0.5m | 소화 시작 거리 |
-| `SAFE_DISTANCE_MIN` | 0.2m | 최소 안전 거리 |
+**이 모듈의 모든 함수는 lock이 잡힌 상태에서 호출됨.**  
+따라서 algo 내부에서는 추가 lock/unlock을 하지 않습니다.
 
----
+### 2. 함수 호출 체인
 
-### 3. navigation (주행 알고리즘)
-
-**SEARCH 모드:** 제자리 회전하며 열원 탐색
-```c
-compute_search_motion(state);
-// → lin_vel = 0, ang_vel = 0.5 rad/s
 ```
-
-**APPROACH 모드** 화재 방향으로 전진 + 방향 보정
-```c
-compute_approach_motion(state);
-// → 열화상 픽셀 위치 기반으로 방향 보정
-```
-
-**열화상 픽셀 -> 각도 변환**
-```
-MLX90641 (16x12, 55° FOV)
-
-     0  1  2  3  4  5  6  7 [8] 9 10 11 12 13 14 15
-                            ↑
-                          중앙
-
-hot_col = 12 → 중앙에서 +4 → 약 +13.8° 오른쪽
-hot_col = 3  → 중앙에서 -5 → 약 -17.2° 왼쪽
+algo_thread (main.c)
+    │
+    └── state_machine_update()
+            ├── handle_idle()
+            ├── handle_search()      → compute_search_motion()
+            ├── handle_detect()      → compute_detect_motion()
+            ├── handle_approach()    → compute_approach_motion()
+            ├── handle_extinguish()  → run_extinguish_loop() → pump_on/off()
+            └── handle_safe_stop()
 ```
 
 ---
 
-### 4. extinguish_logic (소화 알고리즘)
+## 상태 머신 (6-State FSM)
 
-**동작 순서:**
 ```
-강도 1 분사 (3초) → 온도 체크 → 안 꺼짐
-강도 2 분사 (3초) → 온도 체크 → 안 꺼짐
-등등등
-강도 5 분사 (3초) → 온도 체크 → 안 꺼짐
-NEED_CLOSER 반환 → APPROACH로 전환
+┌──────────────────────────────────────────────────────────────┐
+│                                                              │
+│    ┌──────┐   START     ┌────────┐    T>80°C    ┌────────┐  │
+│    │ IDLE │ ──────────► │ SEARCH │ ───────────► │ DETECT │  │
+│    └──────┘             └────────┘    or dT>20   └────────┘  │
+│        ▲                     ▲                       │       │
+│        │                     │                  정렬완료     │
+│      STOP                열원소실                    │       │
+│        │                 (T<50°C)                    ▼       │
+│        │                     │               ┌──────────┐   │
+│        │                     └────────────── │ APPROACH │   │
+│        │                                     └──────────┘   │
+│        │                                           │        │
+│        │                    소화성공           d<0.5m       │
+│        │                    (T<40°C)          & T>100°C     │
+│        │                        │                  │        │
+│        │              ┌─────────┴──────────────────▼────┐   │
+│        │              │         EXTINGUISH              │   │
+│        │              │  (최대강도 실패 시 APPROACH로)   │   │
+│        │              └─────────────────────────────────┘   │
+│        │                                                    │
+│    ┌───┴─────┐                                              │
+│    │SAFE_STOP│ ◄──────── emergency_stop = true (언제든지)   │
+│    └─────────┘                                              │
+│                                                              │
+└──────────────────────────────────────────────────────────────┘
 ```
+
+### 상태별 동작
+
+| 상태 | 설명 | lin_vel | ang_vel | 전이 조건 |
+|------|------|---------|---------|----------|
+| IDLE | 대기 상태 | 0 | 0 | START 명령 → SEARCH |
+| SEARCH | 회전하며 열원 탐색 | 0.1 | 0.5 | T>80°C or dT>20°C → DETECT |
+| DETECT | 전진하며 열원 중앙 정렬 | 0.08 | 가변 | 정렬 완료 → APPROACH |
+| APPROACH | 열원 방향 접근 | 0.15 | 가변 | d<0.5m & T>100°C → EXTINGUISH |
+| EXTINGUISH | 정지 후 소화 | 0 | 0 | T<40°C → SEARCH |
+| SAFE_STOP | 긴급 정지 | 0 | 0 | emergency_stop 해제 필요 |
+
+---
+
+## 모듈별 상세
+
+### shared_state.h / .c
+
+공유 상태 구조체와 mutex 관리 함수 제공.
+
+```c
+typedef struct {
+    pthread_mutex_t mutex;
+    
+    robot_mode_t mode;      // 현재 상태
+    cmd_mode_t cmd_mode;    // 외부 명령
+    
+    int water_level;        // 펌프 강도 (1~5)
+    float lin_vel, ang_vel; // 모터 명령
+    
+    float t_fire;           // 최고 온도 (°C)
+    float dT;               // 온도 차이 (°C)
+    float distance;         // 초음파 거리 (m)
+    int hot_row, hot_col;   // 열원 위치 (픽셀)
+    
+    bool emergency_stop;    // 긴급 정지 플래그
+    // ...
+} shared_state_t;
+```
+
+**제공 함수:**
+- `shared_state_init()` - 초기화
+- `shared_state_destroy()` - mutex 해제
+- `shared_state_lock()` - mutex 잠금 (main에서만 사용)
+- `shared_state_unlock()` - mutex 해제 (main에서만 사용)
+
+### state_machine.h / .c
+
+상태 머신 핵심 로직.
+
+**제공 함수:**
+- `state_machine_init()` - 초기화
+- `state_machine_update(state)` - 매 주기 호출 (lock 상태에서)
+
+**임계값 설정:**
+```c
+#define FIRE_DETECT_THRESHOLD   80.0f   // 열원 감지 온도
+#define FIRE_APPROACH_THRESHOLD 100.0f  // 소화 시작 온도  
+#define FIRE_LOST_THRESHOLD     50.0f   // 열원 소실 판정
+#define DELTA_TEMP_THRESHOLD    20.0f   // dT 감지 임계값
+#define APPROACH_DISTANCE       0.5f    // 소화 거리 (m)
+```
+
+### navigation.h / .c
+
+이동 관련 계산 함수.
+
+**제공 함수:**
+- `compute_search_motion(state)` - SEARCH 상태 이동 계산
+- `compute_detect_motion(state)` - DETECT 상태 (열원 정렬), 완료 시 true 반환
+- `compute_approach_motion(state)` - APPROACH 상태 접근
+
+**주요 상수:**
+```c
+#define THERMAL_CENTER_COL  8       // 16x12 센서 중앙 열
+#define CENTER_TOLERANCE    2       // 중앙 정렬 허용 오차 (픽셀)
+#define OBSTACLE_DISTANCE   0.30f   // 장애물 정지 거리 (m)
+```
+
+### extinguish_logic.h / .c
+
+소화 로직 (단계별 분사).
+
+**제공 함수:**
+- `extinguish_init()` - 초기화
+- `extinguish_reset()` - 상태 리셋
+- `run_extinguish_loop(state)` - 소화 로직 실행
 
 **반환값:**
-| 값 | 의미 | state_machine 동작 |
-|----|------|-------------------|
-| `EXTINGUISH_SUCCESS` (0) | 소화 성공 | → SEARCH |
-| `EXTINGUISH_IN_PROGRESS` (1) | 진행 중 | → 계속 EXTINGUISH |
-| `EXTINGUISH_NEED_CLOSER` (-1) | 더 가까이 | → APPROACH |
+```c
+#define EXTINGUISH_SUCCESS      0   // 소화 성공 (T<40°C)
+#define EXTINGUISH_IN_PROGRESS  1   // 진행 중
+#define EXTINGUISH_NEED_CLOSER -1   // 최대 강도로도 실패, 더 가까이 필요
+```
+
+**동작 흐름:**
+1. 레벨 1로 시작, 3초간 분사
+2. 온도 40°C 미만 → 성공
+3. 아니면 레벨 증가 (최대 5)
+4. 레벨 5에서도 실패 → APPROACH로 복귀
 
 ---
 
+## 데이터 흐름
 
-### common.h 수정 필요
-
-`shared_state_t` 구조체에 다음 추가해줘:
-
-```c
-// common.h의 shared_state_t 맨 아래에 추가
-pthread_mutex_t mutex;   // 뮤텍스 (스레드 동기화용)
-bool ext_cmd;            // 소화 명령 플래그
 ```
-
-그리고 맨 위에:
-```c
-#include <pthread.h>
+┌─────────────┐                  ┌─────────────┐
+│sensor_thread│                  │ motor_thread│
+│  (main.c)   │                  │  (main.c)   │
+└──────┬──────┘                  └──────▲──────┘
+       │                                │
+       │ 쓰기                           │ 읽기
+       │ t_fire, dT                     │ lin_vel
+       │ distance                       │ ang_vel
+       │ hot_row, hot_col               │ water_level
+       │                                │
+       ▼                                │
+┌──────────────────────────────────────┐
+│           shared_state_t              │
+│         (mutex로 동기화)               │
+└──────────────────────────────────────┘
+       │                                ▲
+       │ 읽기                           │ 쓰기
+       │ 센서 데이터                     │ 모터 명령
+       ▼                                │
+┌──────────────────────────────────────┐
+│           algo_thread                 │
+│         state_machine_update()        │
+│         navigation 계산               │
+│         extinguish 로직               │
+└──────────────────────────────────────┘
 ```
 
 ---
 
-### 아직 embedded 함수가 구현이 안 돼있어 algo에서 다음 작업이 수행되지 않고 있음~
+## 스레드 간 Lock 규칙
 
-algo 코드에서 호출하는 함수:
+| 스레드 | Lock 위치 | 비고 |
+|--------|----------|------|
+| sensor_thread | 직접 lock/unlock | 센서 데이터 쓰기 시 |
+| algo_thread | main에서 lock/unlock | 내부 함수는 lock 안 함 |
+| motor_thread | 직접 lock/unlock | 모터 명령 읽기 시 |
+| comm_thread | 직접 lock/unlock | 상태 전송 시 |
 
-**motor_control.h/c**
-```c
-void motor_set_velocity(float lin_vel, float ang_vel);
-void motor_stop(void);
-```
-
-**pump_control.h/c**
-```c
-void pump_set_pwm(int duty);  // duty: 0~100%
-void pump_stop(void);
-```
-
-**ultrasonic.h/c**
-```c
-float ultrasonic_get_distance(void);  // 반환: 미터 단위
-```
 ---
 
+## 제거된 기능
+
+- `water_level_override`, `ext_cmd` 관련 복잡한 분기 삭제
+- 외부에서 water_level 직접 제어 기능 삭제
+- 불필요한 중첩 조건문 단순화
+
+---
+
+## 의존성
+
+```
+algo/
+├── depends on: ../common/common.h (shared_state_t, enum 정의)
+└── depends on: ../embedded/pump_control.h (pump_on, pump_off)
+```
+
+---
+
+## 빌드 & 테스트
+
+```bash
+# 전체 빌드
+cd fire-drone-car
+make clean && make
+
+# 실행 (라즈베리파이, root 필요)
+sudo ./fire_drone_car
+```
+
+---
+
+## 주의사항
+
+1. **모든 algo 함수는 lock 상태에서 호출됨** - 내부에서 lock 호출 금지
+2. **pump_on/off는 extinguish_logic에서만 호출** - 다른 곳에서 직접 호출 금지
+3. **상태 전이 로그 확인** - `[SM]` 태그로 상태 변화 추적 가능
