@@ -426,7 +426,7 @@ sudo reboot
 #### 1) 저장소 클론
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/FireDroneCar.git
+git clone https://github.com/namelesspark/FireDroneCar
 cd FireDroneCar/fire-drone-car
 ```
 
