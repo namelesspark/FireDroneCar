@@ -71,3 +71,9 @@ chmod +x build.sh run.sh
 
 ## 프로젝트 기간
 4주 (2024년 12월)
+
+
+
+## 하드웨어 구성도
+<img width="7631" height="5455" alt="Mermaid Chart - Create complex, visual diagrams with text -2025-12-20-184915" src="https://github.com/user-attachments/assets/e3880e8e-c8db-4763-af69-72b2427e6549" />
+
