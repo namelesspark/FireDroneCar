@@ -47,12 +47,21 @@
 
 **[하드웨어 연결 사진]**
 ![20251219_114947](https://github.com/user-attachments/assets/8d783e52-4569-46a4-9058-de4fa4b576a2)
+
+
+
 ![20251219_114958](https://github.com/user-attachments/assets/7a2420a7-1ba5-4212-9db1-bd440c781421)
+
+
+
 ![20251219_115025](https://github.com/user-attachments/assets/8fef9fec-a618-49ad-a520-23976181e825)
 
 
 **[회로도 이미지]**
 <img width="7631" height="5455" alt="Mermaid Chart - Create complex, visual diagrams with text -2025-12-20-184915" src="https://github.com/user-attachments/assets/68d79e6f-7c62-48cc-ad74-85b366ad5253" />
+
+
+
 <img width="4660" height="1595" alt="Mermaid Chart - Create complex, visual diagrams with text -2025-12-20-185036" src="https://github.com/user-attachments/assets/49571fe1-d1c5-4b90-9187-dda35d553bf6" />
 
 
@@ -88,14 +97,24 @@ fire_drone_car (메인 프로세스)
 - 알고리즘 스레드 타이밍 시퀀스 다이어그램
 <img width="2808" height="2968" alt="알고리즘 스레드 타이밍 시퀀스 다이어그램" src="https://github.com/user-attachments/assets/cbae3730-6703-489f-8478-44fe6d3aee17" />
 
+
+
 - 센서 스레드 타이밍 시퀀스 다이어그램
 <img width="4917" height="3024" alt="센서 스레드 시퀀스" src="https://github.com/user-attachments/assets/94581bf1-2465-457f-9a46-ba77e2084cc0" />
+
+
 
 - 라즈베리파이 통신 시퀀스 다이어그램
 <img width="2973" height="2980" alt="라즈베리 파이 통신 시퀀스 다이어그램" src="https://github.com/user-attachments/assets/0b741217-75f9-4dd2-a194-48d9b4151a3a" />
 
+
+
 - 전체 스레드 구성
 <img width="3286" height="2617" alt="그림6" src="https://github.com/user-attachments/assets/32dee3b6-2169-4f37-b76f-778e71538f86" />
+
+
+
+
 
 #### 파일 구조
 
@@ -131,6 +150,10 @@ fire-drone-car/
 └── Makefile                    # 빌드 설정
 ```
 
+
+
+
+
 ### 사용한 개발 환경
 
 | 항목 | 내용 |
@@ -145,6 +168,12 @@ fire-drone-car/
 | **개발 도구** | VSCode, Git, ssh (원격 개발) |
 
 ---
+
+
+
+
+
+
 
 ## ⚙️ 3. 제한조건 구현 내용 정리
 
@@ -567,7 +596,7 @@ sudo ./test_motor_angle
 
 
 
-## 🐛 6. 문제점 및 해결 방안 / 한계
+## 6. 문제점 및 해결 방안 / 한계
 
 ### 개발 중 겪은 주요 문제와 해결
 
@@ -684,31 +713,162 @@ void pump_off(void) {
 **대응:**
 대응하지 못했음
 
-### 현재 버전의 한계점
 
-#### 1) 단일 화재만 대응 가능
-- 열화상 센서가 가장 뜨거운 픽셀만 추적
-- 여러 개의 화재가 있으면 가장 큰 것만 진압
+#### 5) 단일 공유 상태 구조체로 인한 Lock 경합
 
-**향후 개선:**
-- 클러스터링 알고리즘 적용
-- 여러 화재 위치 저장 및 순차 진압
+**문제:**
+- 모든 스레드가 하나의 `shared_state_t` 구조체 공유
+- 각 스레드는 일부 필드만 사용하지만 전체 구조체를 lock
+- 불필요한 Lock 대기 시간 발생
 
-#### 2) 실내 환경만 고려
-- GPS 없음 (실외 사용 제한)
-- 햇빛에 의한 열화상 오인식 가능
+**현재 구조:**
+```c
+typedef struct {
+    pthread_mutex_t mutex;      // 하나의 mutex로 전체 보호
+    
+    // sensor_thread만 쓰기
+    float t_fire, dT, distance;
+    int hot_row, hot_col;
+    
+    // algo_thread만 쓰기
+    robot_mode_t mode;
+    
+    // motor_thread만 읽기
+    float lin_vel, ang_vel;
+    
+    // comm_thread만 읽기/쓰기
+    cmd_mode_t cmd_mode;
+    bool emergency_stop;
+} shared_state_t;
+```
 
-**향후 개선:**
-- GPS 모듈 추가
-- 열화상 + 연기 센서 융합
+**문제 시나리오:**
+```
+시간 t=0ms:
+- motor_thread가 lin_vel, ang_vel 읽으려고 lock 획득
 
-#### 3) 배터리 용량 제한
-- 약 30분 연속 작동 가능
-- 실제 화재 진압 시간 부족할 수 있음
+시간 t=1ms:
+- sensor_thread가 t_fire 업데이트하려고 lock 시도
+  → 대기! (motor_thread가 사용 중)
+  → motor_thread는 t_fire를 전혀 안 쓰는데도 대기해야 함
+```
 
-**향후 개선:**
-- 자동 충전 복귀 기능
-- 배터리 잔량 모니터링
+**측정된 영향:**
+| 스레드 | 사용하는 필드 | 사용 안 하는 필드 | Lock 대기 발생 |
+|--------|--------------|------------------|---------------|
+| sensor_thread | t_fire, dT, distance, hot_row/col (5개) | mode, lin_vel, ang_vel, cmd_mode 등 (6개) | algo_thread 실행 중 대기 |
+| algo_thread | 전체 (11개) | 없음 | 다른 모든 스레드 실행 중 대기 |
+| motor_thread | lin_vel, ang_vel (2개) | t_fire, dT, distance 등 (9개) | sensor_thread 실행 중 대기 |
+| comm_thread | 전체 읽기, cmd_mode/emergency_stop 쓰기 | 없음 | 모든 스레드 실행 중 대기 |
+
+**향후 개선 방안:**
+
+**1. 필드별 개별 Mutex 사용**
+```c
+typedef struct {
+    // 센서 데이터 (sensor_thread 쓰기, algo_thread 읽기)
+    pthread_mutex_t sensor_mutex;
+    float t_fire, dT, distance;
+    int hot_row, hot_col;
+    
+    // 제어 명령 (algo_thread 쓰기, motor_thread 읽기)
+    pthread_mutex_t control_mutex;
+    float lin_vel, ang_vel;
+    
+    // 상태 (algo_thread 쓰기, comm_thread 읽기)
+    pthread_mutex_t state_mutex;
+    robot_mode_t mode;
+    
+    // 명령 (comm_thread 쓰기, algo_thread 읽기)
+    pthread_mutex_t command_mutex;
+    cmd_mode_t cmd_mode;
+    bool emergency_stop;
+} shared_state_improved_t;
+```
+
+**개선 효과:**
+```
+시간 t=0ms:
+- motor_thread: control_mutex만 lock (lin_vel, ang_vel 읽기)
+- sensor_thread: sensor_mutex만 lock (t_fire 업데이트)
+  → 동시 실행 가능! Lock 경합 없음
+```
+
+**2. Lock-Free 구조 사용 (Read-Copy-Update)**
+```c
+typedef struct {
+    // 읽기 전용 포인터 (atomic)
+    _Atomic(sensor_data_t*) sensor_data;
+    _Atomic(control_data_t*) control_data;
+} shared_state_lockfree_t;
+
+// sensor_thread
+void update_sensor_data() {
+    sensor_data_t* new_data = malloc(sizeof(sensor_data_t));
+    new_data->t_fire = read_thermal();
+    // ...
+    
+    // Atomic swap (lock 없음)
+    sensor_data_t* old = atomic_exchange(&g_state.sensor_data, new_data);
+    free(old);
+}
+
+// algo_thread
+void read_sensor_data() {
+    // Atomic load (lock 없음)
+    sensor_data_t* data = atomic_load(&g_state.sensor_data);
+    float temp = data->t_fire;  // 안전하게 읽기
+}
+```
+
+**3. 메시지 큐 방식**
+```c
+// 각 스레드 간 독립적인 큐
+message_queue_t sensor_to_algo_queue;
+message_queue_t algo_to_motor_queue;
+
+// sensor_thread
+void* sensor_thread_func() {
+    while(running) {
+        sensor_data_t data = read_sensors();
+        mq_send(&sensor_to_algo_queue, &data);  // lock 없음
+    }
+}
+
+// algo_thread
+void* algo_thread_func() {
+    while(running) {
+        sensor_data_t data;
+        mq_receive(&sensor_to_algo_queue, &data);  // lock 없음
+        // ...
+    }
+}
+```
+
+**성능 비교:**
+
+| 방식 | Lock 대기 | 동시 실행 | 복잡도 | 비고 |
+|------|----------|----------|--------|------|
+| **현재 (Single Mutex)** | 높음 | ❌ 순차적 | 낮음 | 하나의 스레드만 접근 가능 |
+| **개별 Mutex** | 낮음 | ✅ 부분 가능 | 중간 | 서로 다른 필드는 동시 접근 가능 |
+| **Lock-Free** | 없음 | ✅ 완전 가능 | 높음 | Atomic operation 사용 |
+| **Message Queue** | 매우 낮음 | ✅ 완전 가능 | 높음 | 버퍼링으로 인한 지연 존재 |
+
+**현재 버전 선택 이유 (Trade-off):**
+1. **구현 단순성**: 4주 프로젝트 기간 내 완성 가능
+2. **디버깅 용이성**: 하나의 mutex로 동기화 이슈 추적 쉬움
+3. **충분한 성능**: 
+   - sensor_thread: 100ms 주기 (lock 시간 약 10ms)
+   - algo_thread: 50ms 주기 (lock 시간 약 40ms, 핵심 로직)
+   - motor_thread: 20ms 주기 (lock 시간 약 5ms)
+   - 로봇 제어에는 현재 응답 속도로 충분
+4. **안전성 우선**: Lock 누락으로 인한 Race Condition 위험 최소화
+
+**개선 시 기대 효과:**
+- **Lock 경합 감소**: 서로 독립적인 필드 접근 시 대기 불필요
+- **센서 샘플링 향상**: sensor_thread가 다른 스레드에 덜 블로킹됨
+- **실시간성 개선**: 긴급 정지 명령의 응답 지연 감소
+- **확장성**: 추가 센서/구동기 통합 시 기존 Lock 영향 최소화
 
 ---
 
