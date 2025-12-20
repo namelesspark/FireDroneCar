@@ -21,7 +21,7 @@ fire-drone-car/
    ├─ test_neck.c                  # 목 서보 단위 테스트
    ├─ test_motor_angle.c           # 조향 서보 각도 테스트
    └─ test_steer.c                 # DC 모터 테스트
-
+```
 ---
 
 ## 2) 핵심 설계 원칙 (Embedded/HAL)
