@@ -15,11 +15,10 @@
 붕괴 건물과 같은 좁은 틈으로 진입해 열화상 센서와 초음파 센서로 불의 위치를 탐지, 자율 주행 기반 초기 진압을 수행하는 초소형 소화 로봇 시스템
 
 ### 주요 기능
-- 🔥![BitcoinBitarooGIF](https://github.com/user-attachments/assets/29dde553-d473-4e4e-a982-a03c28a6927c)
- **실시간 화재 탐지**: MLX90641 열화상 센서(16x12)를 활용한 온도 기반 화재 감지
+- 🔥 **실시간 화재 탐지**: MLX90641 열화상 센서(16x12)를 활용한 온도 기반 화재 감지
 - 🤖 **자율 주행**: 6-상태 FSM 기반 자율 네비게이션 및 열원 추적
 - 🚧 **장애물 회피**: 초음파 센서(HC-SR04)를 활용한 실시간 거리 측정 및 장애물 감지
-- 💧 **단계별 소화**: 5단계 펌프 제어 시스템을 통한 효율적 진압
+- 🧯 **단계별 소화**: 5단계 펌프 제어 시스템을 통한 효율적 진압
 - 📡 **원격 모니터링**: TCP/IP 기반 실시간 상태 전송 및 원격 제어
 - 🛡️ **긴급 정지**: E-STOP 기능을 통한 안전성 확보
 - ⚡ **멀티스레드 구조**: 센서, 알고리즘, 모터, 통신 스레드 독립 동작
@@ -31,35 +30,14 @@
 ### 전체 시스템 구조
 
 **[전체 시스템 블록 다이어그램 이미지]**
-> 라즈베리파이를 중심으로 센서(열화상, 초음파), 구동기(DC 모터, 서보, 펌프)가 연결된 구조, PC와 TCP/IP로 통신하는 모습을 담은 이미지
+<img width="4400" height="2970" alt="시스템구성도" src="https://github.com/user-attachments/assets/103fcfef-1b18-49ab-ad5c-6ace68744995" />
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Raspberry Pi 4B                          │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐   │
-│  │ Sensor   │  │  Algo    │  │  Motor   │  │  Comm    │   │
-│  │ Thread   │  │ Thread   │  │ Thread   │  │ Thread   │   │
-│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘   │
-│       │             │             │             │          │
-│       └─────────────┴─────────────┴─────────────┘          │
-│                 shared_state_t (mutex)                      │
-└─────────────────────────────────────────────────────────────┘
-       │                    │                    │
-       ▼                    ▼                    ▼
-┌────────────┐      ┌────────────┐      ┌────────────┐
-│  Sensors   │      │ Actuators  │      │ Remote UI  │
-├────────────┤      ├────────────┤      │  (PC)      │
-│ MLX90641   │      │ DC Motor   │      │            │
-│ HC-SR04    │      │ Servo x3   │      │ TCP:5000   │
-│            │      │ Water Pump │      │            │
-└────────────┘      └────────────┘      └────────────┘
-```
 
 ### 하드웨어 구성
 
 | 구성요소 | 모델/사양 | 수량 | 용도 |
 |---------|----------|------|------|
-| **메인보드** | Raspberry Pi 4B | 1 | 전체 시스템 제어 |
+| **메인보드** | Raspberry Pi 5 | 1 | 전체 시스템 제어 |
 | **열화상 센서** | MLX90641 (16x12 픽셀) | 1 | 화재 감지 및 위치 추정 |
 | **초음파 센서** | HC-SR04 | 1 | 거리 측정 및 장애물 감지 |
 | **모터 드라이버** | Waveshare Motor HAT (PCA9685) | 1 | PWM 신호 생성 및 모터 제어 |
@@ -68,10 +46,16 @@
 | **워터 펌프** | - | 1 | 소화액 분사 |
 
 **[하드웨어 연결 사진]**
-> 실제 제작된 로봇의 전체 모습, 센서와 모터가 연결된 상태를 보여주는 사진
+![20251219_114947](https://github.com/user-attachments/assets/8d783e52-4569-46a4-9058-de4fa4b576a2)
+![20251219_114958](https://github.com/user-attachments/assets/7a2420a7-1ba5-4212-9db1-bd440c781421)
+![20251219_115025](https://github.com/user-attachments/assets/8fef9fec-a618-49ad-a520-23976181e825)
+
 
 **[회로도 이미지]**
-> 라즈베리파이 GPIO 핀맵, I2C 연결(MLX90641: 0x33, PCA9685: 0x5F), 초음파 센서(TRIG: GPIO23, ECHO: GPIO24) 등이 표시된 회로도
+<img width="7631" height="5455" alt="Mermaid Chart - Create complex, visual diagrams with text -2025-12-20-184915" src="https://github.com/user-attachments/assets/68d79e6f-7c62-48cc-ad74-85b366ad5253" />
+<img width="4660" height="1595" alt="Mermaid Chart - Create complex, visual diagrams with text -2025-12-20-185036" src="https://github.com/user-attachments/assets/49571fe1-d1c5-4b90-9187-dda35d553bf6" />
+
+
 
 ### 소프트웨어 구성
 
@@ -100,7 +84,18 @@ fire_drone_car (메인 프로세스)
 ```
 
 **[스레드 타이밍 다이어그램 이미지]**
-> 각 스레드의 실행 주기와 mutex 잠금 시점을 보여주는 타이밍 다이어그램
+
+- 알고리즘 스레드 타이밍 시퀀스 다이어그램
+<img width="2808" height="2968" alt="알고리즘 스레드 타이밍 시퀀스 다이어그램" src="https://github.com/user-attachments/assets/cbae3730-6703-489f-8478-44fe6d3aee17" />
+
+- 센서 스레드 타이밍 시퀀스 다이어그램
+<img width="4917" height="3024" alt="센서 스레드 시퀀스" src="https://github.com/user-attachments/assets/94581bf1-2465-457f-9a46-ba77e2084cc0" />
+
+- 라즈베리파이 통신 시퀀스 다이어그램
+<img width="2973" height="2980" alt="라즈베리 파이 통신 시퀀스 다이어그램" src="https://github.com/user-attachments/assets/0b741217-75f9-4dd2-a194-48d9b4151a3a" />
+
+- 전체 스레드 구성
+<img width="3286" height="2617" alt="그림6" src="https://github.com/user-attachments/assets/32dee3b6-2169-4f37-b76f-778e71538f86" />
 
 #### 파일 구조
 
@@ -132,8 +127,6 @@ fire-drone-car/
 │   ├── test_ultrasonic.c       # 초음파 센서 테스트
 │   ├── test_pump.c             # 펌프 테스트
 │   └── test_motor_angle.c      # 모터/서보 테스트
-├── docs/                       # 문서
-│   └── comm_protocol.md        # 통신 프로토콜 명세
 ├── scripts/                    # 빌드/실행 스크립트
 └── Makefile                    # 빌드 설정
 ```
@@ -157,33 +150,32 @@ fire-drone-car/
 
 ### 멀티스레드 구조
 
-본 프로젝트는 **4개의 독립적인 스레드**로 구성되어 있으며, 각 스레드는 특정 역할을 담당합니다.
+본 프로젝트는 **4개의 독립적인 스레드**로 구성되어 있으며, 각 스레드는 특정 역할을 담당
 
-```c
-// main.c - 스레드 생성
-pthread_t sensor_tid, algo_tid, motor_tid, comm_tid;
+- 알고리즘 스레드
+<img width="478" height="300" alt="image" src="https://github.com/user-attachments/assets/5b1cb876-fcf0-4365-9ab6-937945566351" />
 
-pthread_create(&sensor_tid, NULL, sensor_thread_func, NULL);
-pthread_create(&algo_tid, NULL, algo_thread_func, NULL);
-pthread_create(&motor_tid, NULL, motor_thread_func, NULL);
-pthread_create(&comm_tid, NULL, comm_thread, &comm_ctx);
-```
+- 모터 스레드
+<img width="617" height="557" alt="image" src="https://github.com/user-attachments/assets/07ec6c55-211a-423c-bbed-ee6268acc52b" />
+
+- 센서 스레드
+<img width="546" height="782" alt="image" src="https://github.com/user-attachments/assets/157b4118-5a66-44ee-ac5e-a6643d702d40" />
+
+- main.c - 스레드 생성
+<img width="486" height="376" alt="image" src="https://github.com/user-attachments/assets/a14f96bb-cdf6-4b99-be3e-18455fe6dab5" />
 
 #### 스레드별 역할
 
 | 스레드 | 실행 주기 | 주요 역할 | 접근 데이터 |
 |--------|----------|----------|------------|
 | **sensor_thread** | ~100ms | 센서 데이터 읽기 및 공유 상태 업데이트 | 쓰기: t_fire, dT, distance, hot_row, hot_col |
-| **algo_thread** | 50ms | 상태 머신 실행 및 모터 명령 계산 | 읽기: 센서 데이터<br>쓰기: mode, lin_vel, ang_vel, water_level |
-| **motor_thread** | 20ms | 모터/서보/펌프 하드웨어 제어 | 읽기: lin_vel, ang_vel, water_level |
+| **algo_thread** | 50ms | 상태 머신 실행 및 모터 명령 계산 | 읽기: 센서 데이터<br>쓰기: mode, lin_vel, ang_vel |
+| **motor_thread** | 20ms | 모터/서보/펌프 하드웨어 제어 | 읽기: lin_vel, ang_vel|
 | **comm_thread** | 이벤트 기반 | TCP 통신 (상태 전송 200ms, 명령 수신) | 읽기: 전체 상태<br>쓰기: cmd_mode, emergency_stop |
 
-**[스레드 간 데이터 흐름 다이어그램 이미지]**
-> sensor → shared_state → algo → shared_state → motor의 데이터 흐름과 comm_thread의 양방향 통신을 보여주는 다이어그램
 
 ### Mutex를 통한 스레드 동기화
-
-모든 스레드는 `shared_state_t` 구조체에 포함된 **pthread_mutex_t**를 통해 동기화됩니다.
+모든 스레드는 `shared_state_t` 구조체에 포함된 **pthread_mutex_t**를 통해 동기화
 
 #### shared_state_t 구조체
 
@@ -199,7 +191,6 @@ typedef struct {
     // 모터 명령
     float lin_vel;              // 선속도 [-1.0, +1.0]
     float ang_vel;              // 각속도 (조향 각도)
-    int water_level;            // 펌프 강도 (1~5)
     
     // 센서 데이터
     float t_fire;               // 최고 온도 (°C)
@@ -221,20 +212,16 @@ typedef struct {
 ```c
 void* sensor_thread_func(void* arg) {
     while(g_running) {
-        // 센서 읽기 (mutex 밖에서)
-        thermal_sensor_read(&thermal);
-        float dist_cm = ultrasonic_read_distance_cm_avg(&us, 3, 30000);
-        
-        // 공유 상태 업데이트 (mutex 안에서)
-        shared_state_lock(&g_state);
-        g_state.t_fire = thermal.T_fire;
-        g_state.dT = thermal.T_fire - thermal.T_env;
-        g_state.distance = dist_cm / 100.0f;
-        g_state.hot_row = thermal.hot_row;
-        g_state.hot_col = thermal.hot_col;
-        shared_state_unlock(&g_state);
-        
-        usleep(100000); // 100ms
+        // 열화상 카메라 읽기, 공유 상태 업데이트
+        if(thermal_sensor_read(&thermal) == 0) {
+            shared_state_lock(&g_state);
+            g_state.t_fire = thermal.T_fire;
+            g_state.dT = thermal.T_fire - thermal.T_env;
+            g_state.hot_row = thermal.hot_row;
+            g_state.hot_col = thermal.hot_col;
+            shared_state_unlock(&g_state);
+        }
+        .....
     }
 }
 ```
@@ -244,12 +231,10 @@ void* sensor_thread_func(void* arg) {
 ```c
 void* algo_thread_func(void* arg) {
     while(g_running) {
-        // 상태 머신 업데이트 (mutex 안에서 전체 실행)
-        shared_state_lock(&g_state);
-        state_machine_update(&g_state);  // 내부에서 추가 lock 없음
-        shared_state_unlock(&g_state);
-        
-        usleep(50000); // 50ms
+        shared_state_lock(&g_state);     // 여기서 lock
+        state_machine_update(&g_state);  // 내부에서 lock 안 함
+        shared_state_unlock(&g_state);   // 여기서 unlock
+        usleep(50000);
     }
 }
 ```
@@ -262,17 +247,22 @@ void* motor_thread_func(void* arg) {
         // 모터 명령 읽기 (mutex 안에서)
         shared_state_lock(&g_state);
         float lin = g_state.lin_vel;
-        float ang = g_state.ang_vel;
-        int pump_level = g_state.water_level;
+        float ang = g_state.ang_vel;  // 수정: ang_val -> ang_vel
+        bool estop = g_state.emergency_stop;
         shared_state_unlock(&g_state);
         
         // 하드웨어 제어 (mutex 밖에서)
-        motor_set_speed(lin);
-        servo_set_angle(SERVO_STEER, ang);
-        if (pump_level > 0) pump_on();
-        else pump_off();
-        
-        usleep(20000); // 20ms
+        if(estop) {
+            motor_stop();
+            servo_set_angle(SERVO_STEER, 90.0f);
+        } else {
+            motor_set_speed(lin); // 뒷바퀴 DC 모터 제어
+            float steering_angle = 90.0f + (ang * 45.0f);  // -45도 ~ +45도 범위
+            if (steering_angle < 45.0f)  steering_angle = 45.0f; // 각도 제한
+            if (steering_angle > 135.0f) steering_angle = 135.0f;
+            servo_set_angle(SERVO_STEER, steering_angle);
+        }
+        usleep(20000);  // 20ms (50Hz)
     }
 }
 ```
@@ -280,16 +270,7 @@ void* motor_thread_func(void* arg) {
 **4) comm_thread - 통신**
 
 ```c
-// 상태 전송 시 스냅샷 방식 (mutex 복사 방지)
-shared_state_t snapshot = {0};
-pthread_mutex_lock(ctx->state_mutex);
-snapshot.mode = ctx->state->mode;
-snapshot.t_fire = ctx->state->t_fire;
-// ... (필요한 필드만 복사)
-pthread_mutex_unlock(ctx->state_mutex);
-
-comm_format_status_line(line, sizeof(line), &snapshot);
-send(client_fd, line, strlen(line), 0);
+// 현재 구현 상태 없음
 ```
 
 ### Mutex 사용의 핵심 원칙
@@ -299,11 +280,11 @@ send(client_fd, line, strlen(line), 0);
 3. **구조체 복사 금지**: `shared_state_t`에 mutex가 포함되어 있어 전체 복사 시 UB 발생 → 스냅샷 방식 사용
 
 **[Mutex Lock 타이밍 차트 이미지]**
-> 4개 스레드가 시간축에서 mutex를 획득/해제하는 시점을 보여주는 차트
+<img width="9560" height="5060" alt="Mermaid Chart - Create complex, visual diagrams with text -2025-12-20-191022" src="https://github.com/user-attachments/assets/29c844b3-5cba-483a-aaf5-b529621b9c03" />
 
 ### 6-상태 FSM (Finite State Machine)
 
-알고리즘의 핵심은 **6개 상태로 구성된 유한 상태 머신**입니다.
+알고리즘의 핵심은 **6개 상태로 구성된 유한 상태 머신**
 
 ```
 ┌──────┐   START    ┌────────┐   T>80°C   ┌────────┐
@@ -330,9 +311,6 @@ send(client_fd, line, strlen(line), 0);
 └─────────┘
 ```
 
-**[상태 전이 다이어그램 이미지]**
-> 실제 프로그램에서 상태 전환이 일어나는 모습을 캡처한 화면 또는 Graphviz로 생성한 다이어그램
-
 #### 상태별 동작
 
 | 상태 | 동작 | 전이 조건 |
@@ -341,7 +319,7 @@ send(client_fd, line, strlen(line), 0);
 | **SEARCH** | 회전하며 열원 탐색<br>(lin_vel=0.1, ang_vel=0.5) | T>80°C or dT>20°C → DETECT<br>열원 소실 시 계속 SEARCH |
 | **DETECT** | 열원 중앙 정렬<br>(전진하며 좌우 미세 조정) | 정렬 완료 → APPROACH<br>열원 소실(T<50°C) → SEARCH |
 | **APPROACH** | 열원 방향 직진<br>(lin_vel=0.15, 조향 보정) | d<0.5m & T>100°C → EXTINGUISH<br>열원 소실 → SEARCH |
-| **EXTINGUISH** | 정지 후 소화<br>(레벨 1→5 단계적 분사) | T<40°C → SEARCH (성공)<br>레벨 5 실패 → APPROACH (재접근) |
+| **EXTINGUISH** | 정지 후 소화<br>(분사 시도 5회) | T<40°C → SEARCH (성공)<br>5회 시도 후 열원 소실 실패 → APPROACH (재접근) |
 | **SAFE_STOP** | 긴급 정지 (모든 구동 중단) | CLEAR_ESTOP 명령 → IDLE |
 
 ### 통신 프로토콜 (IPC)
@@ -414,20 +392,6 @@ sudo usermod -aG gpio,i2c,spi $USER
 sudo reboot
 ```
 
-#### 소프트웨어 의존성 설치
-
-```bash
-# 필수 패키지
-sudo apt-get update
-sudo apt-get install -y build-essential git i2c-tools
-
-# WiringPi 설치
-sudo apt-get install -y wiringpi
-
-# WiringPi 버전 확인 (2.52 이상 권장)
-gpio -v
-```
-
 ### 빌드 방법
 
 #### 1) 저장소 클론
@@ -448,15 +412,6 @@ make
 ls -lh fire_drone_car
 ```
 
-**빌드 옵션:**
-```bash
-# 디버그 빌드
-make DEBUG=1
-
-# 테스트 프로그램만 빌드
-make tests
-```
-
 #### 3) 빌드 성공 확인
 
 ```bash
@@ -469,22 +424,21 @@ make tests
 #### 라즈베리파이에서 메인 프로그램 실행
 
 ```bash
-# root 권한 필요 (GPIO/I2C 접근)
 sudo ./fire_drone_car
 ```
 
 **실행 시 출력 예시:**
 ```
-[main] FireDroneCar Starting...
-[main] WiringPi initialized (BCM mode)
-[thermal] MLX90641 initialized at 0x33
-[motor] Motor HAT initialized at 0x5f
-[servo] Servo initialized (50Hz)
-[comm] listening on port 5000
-[sensor_thread] STARTED
-[algo_thread] STARTED
-[motor_thread] STARTED
-[comm_thread] STARTED
+    printf("========================================\n");
+    printf("========================================\n");
+    printf("        FireDroneCar 구동 시작           \n");
+    printf("========================================\n");
+    printf("========================================\n");
+
+    ... wirignPi 셋업 확인, 하드웨어 상태 확인 후
+    printf("[메인] 스레드 생성 완료\n");
+    printf("[메인] 시스템 가동\n");
+    printf("[메인] Ctrl + C로 동작 중지\n");
 ```
 
 #### PC에서 원격 UI 실행
@@ -501,9 +455,6 @@ python ui_remote.py --host 192.168.1.100 --port 5000
 cd fire-drone-car/src/comm_ui
 python3 ui_remote.py --host 192.168.1.100 --port 5000
 ```
-
-**[원격 UI 실행 화면 스크린샷]**
-> Python curses UI가 실행된 화면, MODE/T_FIRE/DIST 등이 실시간으로 업데이트되는 모습
 
 ### 실행 전 설정
 
@@ -536,8 +487,6 @@ python3 ui_remote.py --host 192.168.1.100 --port 5000
    - ch2: 조향
 5. **펌프 연결**: Motor HAT의 ch4에 연결
 
-**[하드웨어 연결 순서를 보여주는 사진 시리즈]**
-> 단계별로 센서와 모터를 연결하는 과정을 담은 사진들
 
 ### 테스트 프로그램 실행
 
@@ -572,27 +521,27 @@ sudo ./test_motor_angle
 
 #### 시나리오 1: 기본 화재 진압
 
-1. **초기 상태** (0:00-0:05)
+1. **초기 상태**
    - 로봇이 IDLE 상태로 대기
    - PC UI에서 "START" 명령 전송
 
-2. **탐색 단계** (0:05-0:20)
+2. **탐색 단계**
    - MODE=SEARCH로 전환
    - 로봇이 제자리 회전하며 열원 탐색
    - 열화상 센서가 80°C 이상 감지 시 → DETECT로 전환
 
-3. **정렬 단계** (0:20-0:30)
+3. **정렬 단계**
    - MODE=DETECT
    - 목 서보를 좌우로 움직이며 열원을 화면 중앙에 정렬
    - UI에서 HOT=(6,8) → (6,7) → (6,8) 변화 확인
 
-4. **접근 단계** (0:30-0:50)
+4. **접근 단계**
    - MODE=APPROACH
    - 로봇이 열원 방향으로 전진
    - 초음파 센서로 거리 측정 (DIST: 1.5m → 0.8m → 0.4m)
    - T_FIRE 값 증가 (85°C → 105°C → 130°C)
 
-5. **소화 단계** (0:50-1:20)
+5. **소화 단계**
    - MODE=EXTINGUISH
    - 정지 후 펌프 작동 (레벨 1부터 시작)
    - 3초 분사 후 온도 재측정
@@ -604,148 +553,136 @@ sudo ./test_motor_angle
 
 #### 시나리오 2: 장애물 회피
 
-1. **접근 중 장애물 감지** (0:00-0:15)
+1. **접근 중 장애물 감지**
    - APPROACH 상태에서 전진 중
    - 초음파 센서가 30cm 이내 장애물 감지
    - 자동으로 정지 및 회피 동작
 
-2. **우회 후 재접근** (0:15-0:30)
+2. **우회 후 재접근**
    - 회피 후 열원 재탐지
    - 다시 APPROACH → EXTINGUISH
 
 **[장애물 회피 동작 영상]**
 > 로봇이 장애물을 감지하고 회피하는 과정을 담은 클립
 
-#### 시나리오 3: 긴급 정지
 
-1. **자율 주행 중 긴급 상황** (0:00-0:10)
-   - APPROACH 상태에서 주행 중
-   - PC UI에서 "ESTOP" 명령 전송
-
-2. **즉시 정지** (0:10-0:15)
-   - MODE=SAFE_STOP으로 즉시 전환
-   - 모든 모터 정지
-   - UI에서 ESTOP=1 표시
-
-3. **재시작** (0:15-0:25)
-   - "CLEAR_ESTOP" 명령으로 해제
-   - MODE=IDLE로 복귀
-   - 다시 "START" 명령으로 재시작
-
-**[긴급 정지 시연 영상]**
-> ESTOP 명령 전송 → 즉시 정지 → 해제 → 재시작 과정을 보여주는 클립
-
-### UI 모니터링
-
-**[PC UI 실시간 모니터링 화면 녹화]**
-> Python curses UI에서 MODE, T_FIRE, DT, DIST, HOT 값이 실시간으로 변화하는 모습
-
-UI 화면 구성:
-```
-┌────────────────────────────────────────────────┐
-│ FireDroneCar Remote UI  |  192.168.1.100:5000 │
-├────────────────────────────────────────────────┤
-│ MODE : APPROACH                                │
-│ T_FIRE :  120.5 °C    ΔT :   45.2 °C          │
-│ DIST  :    0.48 m     HOT : (6, 8)            │
-│ ESTOP : OFF                                    │
-│                                                │
-│ RAW : MODE=APPROACH;T_FIRE=120.5;DT=45.2;...  │
-├────────────────────────────────────────────────┤
-│ 명령 예시: START / STOP / ESTOP / EXIT         │
-│ cmd> _                                         │
-└────────────────────────────────────────────────┘
-```
-
----
 
 ## 🐛 6. 문제점 및 해결 방안 / 한계
 
 ### 개발 중 겪은 주요 문제와 해결
 
-#### 1) MLX90641 I2C 통신 불안정
+#### 1) 롤 펌프 DC 어댑터 선 끊어짐, 어댑터 타입 문제
 
 **문제:**
-- 열화상 센서에서 간헐적으로 프레임 읽기 실패
-- `I2C_NACK` 에러 발생
+- 워터펌프용 DC 어댑터 전원선이 물리적으로 끊어짐
+- 라즈베리파이에 연결 불가능한 어댑터 규격 (기존 선 재사용 불가)
 
-**원인:**
-- I2C 버스 속도가 너무 빠름 (400kHz)
-- Pull-up 저항 부족
+**해결 방법:**
+- **Step 1**: 결속 부품 확인 및 대체 방안 수립
+- **Step 2**: 릴레이 모듈 및 회로 설계
+- **Step 3**: 전용 제어 채널 할당 및 결선
+- **Step 4**: 구동 테스트 및 전력 안정성 확인
 
-**해결:**
+**[워터펌프와 DC 어댑터 연결 사진]**
+> 왼쪽: 끊어진 DC 어댑터 잭, 오른쪽: 릴레이를 통해 재연결된 워터펌프 시스템
+
+**채택한 해결책:**
 ```c
-// MLX90641_I2C_Driver.c
-// I2C 속도를 100kHz로 낮춤
-ioctl(fd, I2C_SLAVE, addr);
-// Pull-up 저항 4.7kΩ 추가 (하드웨어)
-```
-
-**결과:** 프레임 읽기 성공률 95% → 99.8% 향상
-
-#### 2) Mutex Deadlock 발생
-
-**문제:**
-- algo_thread에서 navigation 함수 내부에서 추가로 lock 호출
-- 프로그램이 멈추는 현상 발생
-
-**원인:**
-- 중첩된 lock 호출 (이미 lock 잡은 상태에서 재호출)
-
-**해결:**
-```c
-// 변경 전 (잘못된 코드)
-void compute_approach_motion(shared_state_t *st) {
-    shared_state_lock(st);  // ← 이미 main에서 lock 잡힘
-    // ...
+// pump_control.c
+// PCA9685 Channel 4를 사용하여 펌프 ON/OFF 제어
+void pump_on(void) {
+    // Servo port 4번을 통해 릴레이 모듈 제어
+    setPWM(PUMP_CHANNEL, 0, 4095);  // Full duty = ON
 }
 
-// 변경 후 (올바른 코드)
-void compute_approach_motion(shared_state_t *st) {
-    // lock 없이 바로 접근 (main에서 lock 관리)
-    // ...
+void pump_off(void) {
+    setPWM(PUMP_CHANNEL, 0, 0);     // 0 duty = OFF
 }
 ```
 
-**원칙 확립:** algo 모듈 내부 함수는 lock을 호출하지 않음. main에서만 관리.
-
-#### 3) PCA9685 PWM 주파수 충돌
+#### 2) 전원 공급 하드웨어 이슈로 인한 시스템 전체 장애
 
 **문제:**
-- 모터와 서보를 동시에 사용할 때 동작 이상
-- 모터는 1600Hz, 서보는 50Hz 필요
+- DC 모터 속도 증가 시 라즈베리파이 전원이 갑자기 꺼지는 현상
+- 초음파 센서도 동시에 측정 실패 발생
+- `lin_vel` 값을 증가시킬수록 증상 악화
 
-**원인:**
-- PCA9685는 전체 채널이 하나의 주파수 공유
-- `motor_init()`과 `servo_init()` 순서에 따라 마지막 주파수로 덮어씌워짐
+**원인 분석:**
+
+```
+증상 발생 메커니즘:
+1. Differential gear 구동축 탈락 발견
+   └─> 바퀴 회전 불가 상태에서 모터만 공회전
+   
+2. 속도 부족으로 lin_vel 값 증가 (0.15 → 0.3)
+   └─> DC 모터에 더 높은 PWM duty 인가
+   
+3. 구동축 없이 모터만 과부하 회전
+   └─> 순간 전류 급증 (정상: 1-2A → 비정상: 4A 이상 추정)
+   
+4. 배터리 전압 강하 (7.4V → 5V 이하)
+   └─> 라즈베리파이 5V 레귤레이터 출력 저하
+   
+5. 라즈베리파이 Brown-out으로 자동 셧다운
+   └─> 초음파 센서도 전원 부족으로 동작 중단
+```
+> 바퀴와 모터 사이 구동축이 빠진 상태, 이로 인해 모터가 공회전하며 과전류 발생
 
 **해결:**
-```c
-// main.c - 초기화 순서 변경
-servo_init();   // 50Hz 설정 (서보 우선)
-motor_init();   // 50Hz 유지
-// 모터도 50Hz에서 duty cycle로 속도 제어
-```
+해결하지 못했음
 
-**결과:** 서보와 모터 모두 정상 동작
 
-#### 4) 초음파 센서 Timeout
+#### 3) SEARCH ↔ DETECT 상태 전환 진동 문제
 
 **문제:**
-- 초음파 센서가 자주 timeout 발생 (측정 실패)
+- dT(온도 차이) 조건으로만 화재 감지 시 무한 반복 발생
+- SEARCH 상태에서 갑자기 입계값 너무 가까움
+  - 실제 화재(150°C) 근처 진입 주변 온도가 50°C일 때, 상온 25°C에서 순간적으로 dT > 20°C 감지 → DETECT 전환
+  - 하지만 T_fire < 80°C이므로 다시 SEARCH 복귀
 
-**원인:**
-- ECHO 핀 대기 시간이 너무 짧음 (10ms)
-- 반사가 잘 안 되는 표면 (흡음재)
+| 문제점 | 입계값 | 기준 설정 |
+|--------|--------|----------|
+| dT 조건으로 쉽게 전환 | SEARCH → DETECT | T > 80°C 또는 dT > 20°C |
+| 감지 입계값 너무 가까움 | DETECT → SEARCH | T < 50°C |
 
-**해결:**
+**해결 방안:**
+
+| 변경 | 역할 | 입계값 | 기준 설정 |
+|------|------|--------|----------|
+| 150°C | 열원 감지 | FIRE_DETECT_THRESHOLD | 80°C |
+| 35°C | 열원 소실 판정 | FIRE_LOST_THRESHOLD | 50°C |
+| 15°C | dT 판정 | DELTA_TEMP_THRESHOLD | 20°C |
+
 ```c
-// ultrasonic.c
-// timeout 30ms로 증가 + 3회 평균
-float dist = ultrasonic_read_distance_cm_avg(&us, 3, 30000);
+// state_machine.c - 수정 전
+#define FIRE_DETECT_THRESHOLD   80.0f
+#define DELTA_TEMP_THRESHOLD    20.0f
+
+// state_machine.c - 수정 후
+#define FIRE_DETECT_THRESHOLD   150.0f   // 열원 감지 (명확한 화재)
+#define FIRE_LOST_THRESHOLD     35.0f    // 열원 소실 (실온 근처)
+#define DELTA_TEMP_THRESHOLD    40.0f    // dT 판정
 ```
 
-**결과:** 측정 성공률 60% → 95% 향상
+**결과:** 
+- 실온 환경에서 안정적 동작 (손, 사람 체온 무시)
+- 명확한 화재만 감지하여 오탐 감소
+
+
+#### 4) 배터리 관리 및 테스트 중단 문제
+
+**문제:**
+- 알고리즘 통합 테스트 중 배터리 전체 방전
+- 충전 시간 부족으로 테스트 일정 지연 (약 2-3시간 대기)
+- 18650 배터리 2개 직렬 연결 사용 중
+
+**영향:**
+- 최종 통합 테스트에서 실제 주행 시나리오 검증 불가
+- EXTINGUISH 상태의 5단계 소화 로직 실측 불가
+- 배터리 잔량 표시 LED 미확인
+
+**대응:**
+대응하지 못했음
 
 ### 현재 버전의 한계점
 
@@ -757,15 +694,7 @@ float dist = ultrasonic_read_distance_cm_avg(&us, 3, 30000);
 - 클러스터링 알고리즘 적용
 - 여러 화재 위치 저장 및 순차 진압
 
-#### 2) 2D 평면에서만 동작
-- 높이가 다른 화재 대응 불가
-- 목 틸트 서보가 있지만 현재 고정 각도만 사용
-
-**향후 개선:**
-- 목 틸트를 활용한 3D 열원 추적
-- 수직 방향 소화 가능하도록 개선
-
-#### 3) 실내 환경만 고려
+#### 2) 실내 환경만 고려
 - GPS 없음 (실외 사용 제한)
 - 햇빛에 의한 열화상 오인식 가능
 
@@ -773,15 +702,7 @@ float dist = ultrasonic_read_distance_cm_avg(&us, 3, 30000);
 - GPS 모듈 추가
 - 열화상 + 연기 센서 융합
 
-#### 4) 네트워크 지연
-- TCP 통신으로 인한 지연 (약 50-100ms)
-- 긴급 상황 대응 시 지연 발생 가능
-
-**향후 개선:**
-- UDP로 변경하여 지연 감소
-- 로컬 버튼 추가 (물리적 E-STOP)
-
-#### 5) 배터리 용량 제한
+#### 3) 배터리 용량 제한
 - 약 30분 연속 작동 가능
 - 실제 화재 진압 시간 부족할 수 있음
 
@@ -795,16 +716,15 @@ float dist = ultrasonic_read_distance_cm_avg(&us, 3, 30000);
 
 | 이름 | 역할 | 담당 모듈 | 주요 기여 |
 |------|------|-----------|----------|
-| **박민호** | 알고리즘 팀장 | `src/algo/` | - 6-상태 FSM 설계 및 구현<br>- 네비게이션 로직 (탐색/정렬/접근)<br>- 단계별 소화 알고리즘<br>- 스레드 동기화 설계 |
-| **김효빈** | 임베디드 개발 | `src/embedded/` | - MLX90641 드라이버 포팅<br>- PCA9685 기반 모터/서보 제어<br>- 초음파 센서 드라이버 구현<br>- 하드웨어 테스트 프로그램 작성 |
+| **박민호** | 자율주행 알고리즘 개발 | `src/algo/` | - 6-상태 설계 및 구현<br>- 네비게이션 로직 (탐색/정렬/접근)<br>- 단계별 소화 알고리즘<br>- 스레드 동기화 설계 |
+| **김효빈** | 임베디드(모터 제어 함수) 개발 | `src/embedded/` | - MLX90641 드라이버 포팅<br>- PCA9685 기반 모터/서보 제어<br>- 초음파 센서 드라이버 구현<br>- 적외선 카메라 열원 행, 열 값 반환 함수 구현<br>-하드웨어 테스트 프로그램 작성 |
 | **노경민** | 통신/UI 개발 | `src/comm_ui/` | - TCP 소켓 서버 구현<br>- 통신 프로토콜 설계<br>- Python curses 기반 원격 UI<br>- 실시간 모니터링 시스템 |
-| **이상엽** | 하드웨어 설계 | `hardware/` | - 회로 설계 및 배선<br>- 기구 설계 및 조립<br>- BOM 작성 및 부품 조달<br>- 최종 통합 테스트 |
+| **이상엽** | 불꽃소방대 팀장, 하드웨어 설계 | `hardware/` | - 회로 설계 및 배선<br>- 기구 설계 및 조립<br>- BOM 작성 및 부품 조달<br>- |
 
 ### 협업 도구
 - **버전 관리**: Git/GitHub (Feature Branch 전략)
-- **문서화**: Markdown, README
-- **커뮤니케이션**: 카카오톡, 대면 회의 (주 2회)
-- **이슈 트래킹**: GitHub Issues
+- **문서화**: README
+- **커뮤니케이션**: 카카오톡, 대면 회의, Discord 온라인 회의 (주 2회)
 
 **[팀 사진]**
 > 프로젝트 완성 후 팀원들이 함께 찍은 사진
@@ -826,16 +746,17 @@ MIT License
 
 Copyright (c) 2024 FireDroneCar Team
 
-본 프로젝트는 홍익대학교 임베디드 시스템 과목의 팀 프로젝트로 제작되었습니다.
+본 프로젝트는 국립금오공과대학교 임베디드 시스템 과목의 팀 프로젝트로 제작되었습니다. (금붕이, 금순이 4명)
 
 ---
-
 ## 📞 문의
+**EMAIL**
+노경민: sadong2135@gmail.com
+박민호: jade.lake8852@gmail.com
+이상엽: dltkdduq8732@naver.com
+김효빈: gyqls09@gmail.com
 
-프로젝트 관련 문의사항은 GitHub Issues를 통해 남겨주세요.
-
-**GitHub Repository**: https://github.com/YOUR_USERNAME/FireDroneCar
-
+**GitHub Repository**: https://github.com/namelesspark/FireDroneCar
 ---
 
-**최종 업데이트**: 2024년 12월
+**최종 업데이트**: 2024년 12월 21일
