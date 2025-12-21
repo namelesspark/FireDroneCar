@@ -6,7 +6,7 @@
 
 ---
 
-## 📋 1. 프로젝트 개요
+## 1. 프로젝트 개요
 
 ### 프로젝트 이름
 **FireDroneCar** - 화재 탐지 및 진압 자율주행 로봇
@@ -89,7 +89,7 @@
 
 ---
 
-## 🏗️ 2. 시스템 구성
+## 2. 시스템 구성
 
 ### 전체 시스템 구조
 
@@ -99,6 +99,26 @@
 
 ### 하드웨어 구성
 - 본 로봇은 Raspberry Pi 5를 메인 제어기기이며, Adeept Robot HAT V3.1을 통해 전력 분배 및 액추에이터 제어를 통합 관리하는 구조로 설계되었음
+
+**가. 제어 보드 및 전원 시스템**
+- **메인 컨트롤러**: Raspberry Pi 5 (데이터 처리 및 상위 제어 알고리즘 실행)
+- **확장 보드**: Adeept Robot HAT V3.1 (PCA9685 PWM Driver 내장, I2C 주소: 0x5F)
+- **전원부**: 18650 리튬이온 배터리 x2 (7.4V, 4A)
+- 배터리 전원은 Adeept HAT의 Vin 단자로 입력되며, 40-Pin Header를 통해 라즈베리 파이에 5V 전원을 공급함
+
+**나. 구동부 및 액추에이터**
+- PCA9685 PWM Driver (I2C 주소: `0x5F`를 통해 총 5개의 액추에이터 제어
+- 주행 시스템:DC Motor (후륜 구동): Motor M1 채널에 연결되어 로봇의 이동을 담당
+- Servo Motor (조향): Servo Ch2 채널을 사용하여 전륜 조향을 수행
+- 상부 가동부 (Neck System):
+  - Servo Motor (목 상하): Servo Ch0를 통해 센서 및 소화 노즐의 틸트(Tilt) 각도를 조절
+  - Servo Motor (목 좌우): Servo Ch1을 통해 센서 및 소화 노즐의 팬(Pan) 각도를 조절
+  - Water Pump: Servo Ch4 채널에 연결되어 화재 탐지 시 소화액을 분사
+ 
+**다. 인터페이스 및 통신 구조**
+- I2C 통신: Raspberry Pi 5의 /dev/i2c-1 버스를 공유하며, PWM 드라이버($0x5F$)와 열화상 센서($0x33$)가 각각 독립적인 주소로 통신합니다.
+- GPIO 제어: 초음파 센서는 HAT을 거치지 않고 Raspberry Pi의 40-Pin GPIO에 직접 연결되어 실시간성을 확보합니다.
+
 
 | 구성요소 | 모델/사양 | 수량 | 용도 |
 |---------|----------|------|------|
@@ -112,15 +132,8 @@
 
 
 **[하드웨어 연결 사진]**
-![20251219_114947](https://github.com/user-attachments/assets/8d783e52-4569-46a4-9058-de4fa4b576a2)
-
-
-
-![20251219_114958](https://github.com/user-attachments/assets/7a2420a7-1ba5-4212-9db1-bd440c781421)
-
-
-
-![20251219_115025](https://github.com/user-attachments/assets/8fef9fec-a618-49ad-a520-23976181e825)
+- 하드웨어 다이어그램
+<img width="7631" height="5455" alt="하드웨어" src="https://github.com/user-attachments/assets/b50f31b9-4b22-4dca-b49d-a131390010ba" />
 
 
 **[회로도 이미지]**
