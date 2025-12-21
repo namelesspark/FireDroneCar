@@ -136,14 +136,6 @@
 <img width="7631" height="5455" alt="하드웨어" src="https://github.com/user-attachments/assets/b50f31b9-4b22-4dca-b49d-a131390010ba" />
 
 
-**[회로도 이미지]**
-<img width="7631" height="5455" alt="Mermaid Chart - Create complex, visual diagrams with text -2025-12-20-184915" src="https://github.com/user-attachments/assets/68d79e6f-7c62-48cc-ad74-85b366ad5253" />
-
-
-
-<img width="4660" height="1595" alt="Mermaid Chart - Create complex, visual diagrams with text -2025-12-20-185036" src="https://github.com/user-attachments/assets/49571fe1-d1c5-4b90-9187-dda35d553bf6" />
-
-
 
 ### 소프트웨어 구성
 
