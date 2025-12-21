@@ -127,8 +127,8 @@
 
  
 **다. 인터페이스 및 통신 구조**
-- I2C 통신: Raspberry Pi 5의 /dev/i2c-1 버스를 공유하며, PWM 드라이버($0x5F$)와 열화상 센서($0x33$)가 각각 독립적인 주소로 통신합니다.
-- GPIO 제어: 초음파 센서는 HAT을 거치지 않고 Raspberry Pi의 40-Pin GPIO에 직접 연결되어 실시간성을 확보합니다.
+- I2C 통신: Raspberry Pi 5의 /dev/i2c-1 버스를 공유하며, PWM 드라이버($0x5F$)와 열화상 센서($0x33$)가 각각 독립적인 주소로 통신
+- GPIO 제어: 초음파 센서는 HAT을 거치지 않고 Raspberry Pi의 40-Pin GPIO에 직접 연결되어 실시간성을 확보
 
 
 **[하드웨어 연결 사진]**
@@ -165,26 +165,28 @@ fire_drone_car (메인 프로세스)
 
 **[스레드 타이밍 다이어그램 이미지]**
 
+---
+
 - 알고리즘 스레드 타이밍 시퀀스 다이어그램
 <img width="2808" height="2968" alt="알고리즘 스레드 타이밍 시퀀스 다이어그램" src="https://github.com/user-attachments/assets/cbae3730-6703-489f-8478-44fe6d3aee17" />
 
-
+---
 
 - 센서 스레드 타이밍 시퀀스 다이어그램
 <img width="4917" height="3024" alt="센서 스레드 시퀀스" src="https://github.com/user-attachments/assets/94581bf1-2465-457f-9a46-ba77e2084cc0" />
 
-
+---
 
 - 라즈베리파이 통신 시퀀스 다이어그램
 <img width="2973" height="2980" alt="라즈베리 파이 통신 시퀀스 다이어그램" src="https://github.com/user-attachments/assets/0b741217-75f9-4dd2-a194-48d9b4151a3a" />
 
-
+---
 
 - 전체 스레드 구성
 <img width="3286" height="2617" alt="그림6" src="https://github.com/user-attachments/assets/32dee3b6-2169-4f37-b76f-778e71538f86" />
 
 
-
+---
 
 
 #### 파일 구조
@@ -471,7 +473,7 @@ void* comm_thread(void* arg) {
 
 ### 통신 프로토콜 (IPC)
 
-라즈베리파이와 PC 간 **TCP/IP 소켓** 통신을 사용합니다.
+라즈베리파이와 PC 간 **TCP/IP 소켓** 통신을 사용함함
 
 
 
@@ -1192,12 +1194,12 @@ def broadcast_status(status):
 ---
 ## 📞 문의
 **EMAIL**
-노경민: sadong2135@gmail.com
-박민호: jade.lake8852@gmail.com
-이상엽: dltkdduq8732@naver.com
-김효빈: gyqls09@gmail.com
+- 노경민: sadong2135@gmail.com
+- 박민호: jade.lake8852@gmail.com
+- 이상엽: dltkdduq8732@naver.com
+- 김효빈: gyqls09@gmail.com
 
 **GitHub Repository**: https://github.com/namelesspark/FireDroneCar
 ---
 
-**최종 업데이트**: 2024년 12월 21일
+**최종 업데이트**: 2024년 12월 21일 20:33
