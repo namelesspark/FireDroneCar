@@ -752,7 +752,11 @@ https://github.com/user-attachments/assets/ccf1ac07-1633-43f0-bddd-4d0c2afb525b
 - **Step 4**: 구동 테스트 및 전력 안정성 확인
 
 **[워터펌프와 DC 어댑터 연결 사진]**
-> 왼쪽: 끊어진 DC 어댑터 잭, 오른쪽: 릴레이를 통해 재연결된 워터펌프 시스템
+<img width="1730" height="1730" alt="워터펌프 연결잭 사진" src="https://github.com/user-attachments/assets/4fb567b1-f059-420c-8516-e83fa5a7d5c2" />
+
+---
+
+<img width="1126" height="1502" alt="워터펌프 연결 사진" src="https://github.com/user-attachments/assets/501e307e-ccae-40ec-a1b0-3d737deae404" />
 
 **채택한 해결책:**
 ```c
