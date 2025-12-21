@@ -135,6 +135,9 @@
 - 하드웨어 다이어그램
 <img width="7631" height="5455" alt="하드웨어" src="https://github.com/user-attachments/assets/b50f31b9-4b22-4dca-b49d-a131390010ba" />
 
+- 액추에이터 시퀀스 다이어그램
+<img width="4579" height="2971" alt="액추에이터 시퀀스 다이어그램" src="https://github.com/user-attachments/assets/c8d189c7-0ea0-45e1-9ee8-f662849e5f42" />
+
 
 
 ### 소프트웨어 구성
@@ -179,6 +182,11 @@ fire_drone_car (메인 프로세스)
 
 - 라즈베리파이 통신 시퀀스 다이어그램
 <img width="2973" height="2980" alt="라즈베리 파이 통신 시퀀스 다이어그램" src="https://github.com/user-attachments/assets/0b741217-75f9-4dd2-a194-48d9b4151a3a" />
+
+---
+
+- 공유 상태 mutex 접근 플로우 차트
+<img width="6050" height="2322" alt="공유 상태 mutex 플로우차트" src="https://github.com/user-attachments/assets/e4d96f7a-2f4c-4f6f-a121-c43fea075aec" />
 
 ---
 
