@@ -96,6 +96,7 @@
 **[전체 시스템 블록 다이어그램 이미지]**
 <img width="4400" height="2970" alt="시스템구성도" src="https://github.com/user-attachments/assets/103fcfef-1b18-49ab-ad5c-6ace68744995" />
 
+---
 
 ### 하드웨어 구성
 - 본 로봇은 Raspberry Pi 5를 메인 제어기기이며, Adeept Robot HAT V3.1을 통해 전력 분배 및 액추에이터 제어를 통합 관리하는 구조로 설계되었음
@@ -131,14 +132,13 @@
 - GPIO 제어: 초음파 센서는 HAT을 거치지 않고 Raspberry Pi의 40-Pin GPIO에 직접 연결되어 실시간성을 확보
 
 
-**[하드웨어 연결 사진]**
-- 하드웨어 다이어그램
+**[하드웨어 다이어그램]**
 <img width="7631" height="5455" alt="하드웨어" src="https://github.com/user-attachments/assets/b50f31b9-4b22-4dca-b49d-a131390010ba" />
 
-- 액추에이터 시퀀스 다이어그램
+**[액추에이터 시퀀스 다이어그램]**
 <img width="4579" height="2971" alt="액추에이터 시퀀스 다이어그램" src="https://github.com/user-attachments/assets/c8d189c7-0ea0-45e1-9ee8-f662849e5f42" />
 
-
+---
 
 ### 소프트웨어 구성
 
@@ -182,11 +182,6 @@ fire_drone_car (메인 프로세스)
 
 - 라즈베리파이 통신 시퀀스 다이어그램
 <img width="2973" height="2980" alt="라즈베리 파이 통신 시퀀스 다이어그램" src="https://github.com/user-attachments/assets/0b741217-75f9-4dd2-a194-48d9b4151a3a" />
-
----
-
-- 공유 상태 mutex 접근 플로우 차트
-<img width="6050" height="2322" alt="공유 상태 mutex 플로우차트" src="https://github.com/user-attachments/assets/e4d96f7a-2f4c-4f6f-a121-c43fea075aec" />
 
 ---
 
@@ -415,8 +410,12 @@ void* comm_thread(void* arg) {
 2. **Deadlock 방지**: algo_thread는 main에서 lock/unlock 관리, 내부 함수는 lock 호출 안 함
 3. **구조체 복사 금지**: `shared_state_t`에 mutex가 포함되어 있어 전체 복사 시 UB 발생 → 스냅샷 방식 사용
 
+**[공유 상태 mutex 접근 플로우 차트}**
+<img width="6050" height="2322" alt="공유 상태 mutex 플로우차트" src="https://github.com/user-attachments/assets/e4d96f7a-2f4c-4f6f-a121-c43fea075aec" />
+
 **[Mutex Lock 타이밍 차트 이미지]**
-<img width="9560" height="5060" alt="Mermaid Chart - Create complex, visual diagrams with text -2025-12-20-191022" src="https://github.com/user-attachments/assets/29c844b3-5cba-483a-aaf5-b529621b9c03" />
+<img width="9360" height="3380" alt="mutex 타이밍 간트 차트" src="https://github.com/user-attachments/assets/199fe966-0b41-48a4-96f4-580a9a4945e6" />
+
 
 ### 6-상태 FSM (Finite State Machine)
 
