@@ -92,7 +92,6 @@ HAT의 40-Pin Header를 통해 Raspberry Pi 5에 안정적인 $5V$ 전원을 공
 나. 센서부 (Sensors)
 
 화재 탐지 및 자율 주행 환경 인지를 위해 다음과 같은 센서 인터페이스를 구축하였습니다.
-구분,부품명,연결 인터페이스,주요 역할 및 특징
 
 | 구분 | 부품명 | 연결 인터페이스 | 주요 역할 |
 | :--- | :--- | :--- | :--- |
@@ -101,10 +100,10 @@ HAT의 40-Pin Header를 통해 Raspberry Pi 5에 안정적인 $5V$ 전원을 공
 
 다. 구동부 및 액추에이터 (Actuators)
 
-PCA9685 PWM Driver (I2C 주소: $0x5F$F를 통해 총 5개의 액추에이터를 정밀하게 제어합니다.
-주행 시스템:DC Motor (후륜 구동): Motor M1 채널에 연결되어 로봇의 이동을 담당합니다.
-Servo Motor (조향): Servo Ch2 채널을 사용하여 전륜 조향을 수행합니다.
-상부 가동부 (Neck System):
+-- PCA9685 PWM Driver (I2C 주소: $0x5F$F를 통해 총 5개의 액추에이터를 정밀하게 제어합니다.
+- 주행 시스템:DC Motor (후륜 구동): Motor M1 채널에 연결되어 로봇의 이동을 담당합니다.
+- Servo Motor (조향): Servo Ch2 채널을 사용하여 전륜 조향을 수행합니다.
+-- 상부 가동부 (Neck System):
 - Servo Motor (목 상하): Servo Ch0를 통해 센서 및 소화 노즐의 틸트(Tilt) 각도를 조절합니다.
 - Servo Motor (목 좌우): Servo Ch1을 통해 센서 및 소화 노즐의 팬(Pan) 각도를 조절합니다.
 소화 시스템:Water Pump: Servo Ch4 채널에 연결되어 화재 탐지 시 소화액을 분사합니다.
