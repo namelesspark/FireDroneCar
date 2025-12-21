@@ -98,12 +98,12 @@ chmod +x build.sh run.sh
 
 **다. 구동부 및 액추에이터 (Actuators)**
 
- PCA9685 PWM Driver (I2C 주소: $0x5F$F를 통해 총 5개의 액추에이터를 정밀하게 제어합니다.
-- 주행 시스템:DC Motor (후륜 구동): Motor M1 채널에 연결되어 로봇의 이동을 담당합니다.
-- Servo Motor (조향): Servo Ch2 채널을 사용하여 전륜 조향을 수행합니다.
--- 상부 가동부 (Neck System):
-- Servo Motor (목 상하): Servo Ch0를 통해 센서 및 소화 노즐의 틸트(Tilt) 각도를 조절합니다.
-- Servo Motor (목 좌우): Servo Ch1을 통해 센서 및 소화 노즐의 팬(Pan) 각도를 조절합니다.
+- PCA9685 PWM Driver (I2C 주소: `0x5F`를 통해 총 5개의 액추에이터를 정밀하게 제어합니다.
+주행 시스템:DC Motor (후륜 구동): Motor M1 채널에 연결되어 로봇의 이동을 담당합니다.
+Servo Motor (조향): Servo Ch2 채널을 사용하여 전륜 조향을 수행합니다.
+- 상부 가동부 (Neck System):
+Servo Motor (목 상하): Servo Ch0를 통해 센서 및 소화 노즐의 틸트(Tilt) 각도를 조절합니다.
+Servo Motor (목 좌우): Servo Ch1을 통해 센서 및 소화 노즐의 팬(Pan) 각도를 조절합니다.
 소화 시스템:Water Pump: Servo Ch4 채널에 연결되어 화재 탐지 시 소화액을 분사합니다.
 
 라. 인터페이스 및 통신 구조
