@@ -169,12 +169,6 @@ fire-drone-car/
 
 ---
 
-
-
-
-
-
-
 ## ⚙️ 3. 제한조건 구현 내용 정리
 
 ### 멀티스레드 구조
@@ -587,9 +581,7 @@ sudo ./test_motor_angle
 **[장애물 회피 동작 영상]**
 https://github.com/user-attachments/assets/ccf1ac07-1633-43f0-bddd-4d0c2afb525b
 
-
-
-
+---
 
 ## 6. 문제점 및 해결 방안 / 한계
 
