@@ -78,17 +78,15 @@ chmod +x build.sh run.sh
 <img width="7631" height="5455" alt="Mermaid Chart - Create complex, visual diagrams with text -2025-12-20-184915" src="https://github.com/user-attachments/assets/e3880e8e-c8db-4763-af69-72b2427e6549" />
 
 ## 시스템 구성
-2.1 하드웨어 구성
-본 로봇은 Raspberry Pi 5를 메인 제어기로 채택하여 고성능 연산을 수행하며, Adeept Robot HAT V3.1을 통해 전력 분배 및 액추에이터 제어를 통합 관리하는 구조로 설계되었습니다.
+하드웨어 구성
+- 본 로봇은 Raspberry Pi 5를 메인 제어기로 채택하여 고성능 연산을 수행하며, Adeept Robot HAT V3.1을 통해 전력 분배 및 액추에이터 제어를 통합 관리하는 구조로 설계되었습니다.
 
-가. 제어 보드 및 전원 시스템
-
-메인 컨트롤러 (Main Controller): Raspberry Pi 5를 사용하여 알고리즘 연산, 센서 데이터 처리 및 멀티스레드 제어를 수행합니다.
-확장 보드 (Expansion Board): Adeept Robot HAT V3.1을 장착하여 모터 제어 및 전원 관리 효율을 높였습니다.
-전원부 (Power System): $7.4V$, $4A$ 사양의 18650 리튬이온 배터리 2개를 직렬 연결하여 사용합니다.
-배터리 전원은 Adeept HAT의 Vin 단자로 입력됩니다.
-HAT의 40-Pin Header를 통해 Raspberry Pi 5에 안정적인 $5V$ 전원을 공급합니다.
-
+가. 제어 보드 및 전원 시스템**
+* **메인 컨트롤러:** Raspberry Pi 5 (데이터 처리 및 상위 제어 알고리즘 실행)
+* **확장 보드:** Adeept Robot HAT V3.1 (PCA9685 PWM Driver 내장, I2C 주소: `0x5F`)
+* **전원부:** 18650 리튬이온 배터리 x2 (7.4V, 4A)
+    * 배터리 전원은 Adeept HAT의 Vin 단자로 입력되며, 40-Pin Header를 통해 라즈베리 파이에 5V 전원을 공급합니다.
+    * 
 나. 센서부 (Sensors)
 
 화재 탐지 및 자율 주행 환경 인지를 위해 다음과 같은 센서 인터페이스를 구축하였습니다.
