@@ -32,8 +32,6 @@
 **[전체 시스템 블록 다이어그램 이미지]**
 <img width="4400" height="2970" alt="시스템구성도" src="https://github.com/user-attachments/assets/103fcfef-1b18-49ab-ad5c-6ace68744995" />
 
-## 하드웨어 구성도
-<img width="7631" height="5455" alt="Mermaid Chart - Create complex, visual diagrams with text -2025-12-20-184915" src="https://github.com/user-attachments/assets/e3880e8e-c8db-4763-af69-72b2427e6549" />
 
 ### 하드웨어 구성
 - 본 로봇은 Raspberry Pi 5를 메인 제어기기이며, Adeept Robot HAT V3.1을 통해 전력 분배 및 액추에이터 제어를 통합 관리하는 구조로 설계되었습니다.
