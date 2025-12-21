@@ -686,6 +686,8 @@ sudo ./test_motor_angle
 ### 데모 영상
 
 **[장애물 회피 동작 영상]**
+깃허브 Repo 디렉토리 위치
+- https://github.com/namelesspark/FireDroneCar/blob/main/Demo/%EB%AF%B8%EB%94%94%EC%96%B41.mp4
 
 https://github.com/user-attachments/assets/ccf1ac07-1633-43f0-bddd-4d0c2afb525b
 
