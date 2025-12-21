@@ -244,7 +244,7 @@ fire-drone-car/
 
 ---
 
-## ⚙️ 3. 제한조건 구현 내용 정리
+## 3. 제한조건 구현 내용 정리
 
 ### 멀티스레드 구조
 
@@ -993,6 +993,7 @@ void* algo_thread_func() {
 - **실시간성 개선**: 긴급 정지 명령의 응답 지연 감소
 - **확장성**: 추가 센서/구동기 통합 시 기존 Lock 영향 최소화
 
+---
 
 ### 현재 버전의 한계점
 
@@ -1001,6 +1002,8 @@ void* algo_thread_func() {
 3. **통신 기능 미테스트**: TCP 서버 코드는 구현되어 있으나, 원격 UI와 연동한 실제 테스트 미완료
 4. **배터리 수명**: 연속 동작 시간 약 20-30분으로 장시간 테스트 어려움
 5. **단일 Mutex**: 스레드 간 Lock 경합 발생 가능
+
+---
 
 ### 시간이 더 있었으면 하고 싶었던 개선 사항
 
@@ -1123,47 +1126,9 @@ def render_thermal_heatmap(frame_data):
 
 **현재 문제**: curses 기반 터미널 UI는 설치 필요, 시각적 제한
 
-**개선 방안**:
-
-**백엔드 (라즈베리파이)**:
-```python
-# Flask 또는 FastAPI 기반 웹서버
-from flask import Flask, render_template, jsonify
-from flask_socketio import SocketIO
-
-app = Flask(__name__)
-socketio = SocketIO(app)
-
-@socketio.on('connect')
-def handle_connect():
-    # 클라이언트 연결 시 상태 전송 시작
-    pass
-
-def broadcast_status(status):
-    socketio.emit('status_update', status)
-```
-
-**프론트엔드**:
-- React 또는 Vue.js 기반 SPA
-- 실시간 상태 표시 (WebSocket)
-- 열화상 히트맵 시각화 (Canvas/D3.js)
-- 명령 버튼 (START/STOP/ESTOP)
-- 로봇 상태 로그 타임라인
-
-**주요 기능**:
-| 기능 | 설명 |
-|------|------|
-| 실시간 대시보드 | 온도, 거리, 모드, 속도 게이지 표시 |
-| 열화상 히트맵 | 12x16 픽셀 온도 분포 시각화 |
-| 제어 패널 | START/STOP/ESTOP 버튼, 수동 조향 슬라이더 |
-| 로그 뷰어 | 상태 전이 이력, 에러 로그 표시 |
-| 설정 패널 | 임계값 실시간 조정 (FIRE_THRESHOLD 등) |
-
-**기대 효과**: 브라우저만으로 접속 가능, 모바일 지원, 직관적인 시각화, 다중 사용자 모니터링
-
 ---
 
-## 👥 7. 팀원 및 역할
+## 7. 팀원 및 역할
 
 | 이름 | 역할 | 담당 모듈 | 주요 기여 |
 |------|------|-----------|----------|
