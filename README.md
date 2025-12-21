@@ -86,6 +86,7 @@ chmod +x build.sh run.sh
 * **확장 보드:** Adeept Robot HAT V3.1 (PCA9685 PWM Driver 내장, I2C 주소: `0x5F`)
 * **전원부:** 18650 리튬이온 배터리 x2 (7.4V, 4A)
     * 배터리 전원은 Adeept HAT의 Vin 단자로 입력되며, 40-Pin Header를 통해 라즈베리 파이에 5V 전원을 공급합니다.
+
 **나. 센서부 (Sensors)**
 
 화재 탐지 및 자율 주행 환경 인지를 위해 다음과 같은 센서 인터페이스를 구축하였습니다.
@@ -97,7 +98,7 @@ chmod +x build.sh run.sh
 
 **다. 구동부 및 액추에이터 (Actuators)**
 
--- PCA9685 PWM Driver (I2C 주소: $0x5F$F를 통해 총 5개의 액추에이터를 정밀하게 제어합니다.
+ PCA9685 PWM Driver (I2C 주소: $0x5F$F를 통해 총 5개의 액추에이터를 정밀하게 제어합니다.
 - 주행 시스템:DC Motor (후륜 구동): Motor M1 채널에 연결되어 로봇의 이동을 담당합니다.
 - Servo Motor (조향): Servo Ch2 채널을 사용하여 전륜 조향을 수행합니다.
 -- 상부 가동부 (Neck System):
