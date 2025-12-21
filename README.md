@@ -413,9 +413,6 @@ void* comm_thread(void* arg) {
 **[공유 상태 mutex 접근 플로우 차트}**
 <img width="6050" height="2322" alt="공유 상태 mutex 플로우차트" src="https://github.com/user-attachments/assets/e4d96f7a-2f4c-4f6f-a121-c43fea075aec" />
 
-**[Mutex Lock 타이밍 차트 이미지]**
-<img width="9360" height="3380" alt="mutex 타이밍 간트 차트" src="https://github.com/user-attachments/assets/199fe966-0b41-48a4-96f4-580a9a4945e6" />
-
 
 ### 6-상태 FSM (Finite State Machine)
 
