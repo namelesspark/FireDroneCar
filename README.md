@@ -32,8 +32,28 @@
 **[전체 시스템 블록 다이어그램 이미지]**
 <img width="4400" height="2970" alt="시스템구성도" src="https://github.com/user-attachments/assets/103fcfef-1b18-49ab-ad5c-6ace68744995" />
 
+## 하드웨어 구성도
+<img width="7631" height="5455" alt="Mermaid Chart - Create complex, visual diagrams with text -2025-12-20-184915" src="https://github.com/user-attachments/assets/e3880e8e-c8db-4763-af69-72b2427e6549" />
 
 ### 하드웨어 구성
+- 본 로봇은 Raspberry Pi 5를 메인 제어기로 채택하여 고성능 연산을 수행하며, Adeept Robot HAT V3.1을 통해 전력 분배 및 액추에이터 제어를 통합 관리하는 구조로 설계되었습니다.
+
+**가. 제어 보드 및 전원 시스템**
+* **메인 컨트롤러:** Raspberry Pi 5 (데이터 처리 및 상위 제어 알고리즘 실행)
+* **확장 보드:** Adeept Robot HAT V3.1 (PCA9685 PWM Driver 내장, I2C 주소: `0x5F`)
+* **전원부:** 18650 리튬이온 배터리 x2 (7.4V, 4A)
+    * 배터리 전원은 Adeept HAT의 Vin 단자로 입력되며, 40-Pin Header를 통해 라즈베리 파이에 5V 전원을 공급합니다.
+
+**나. 센서부 (Sensors)**
+
+화재 탐지 및 자율 주행 환경 인지를 위해 다음과 같은 센서 인터페이스를 구축하였습니다.
+
+| 구분 | 부품명 | 연결 인터페이스 | 주요 역할 |
+| :--- | :--- | :--- | :--- |
+| **열화상 센서** | MLX90641 | I2C (Port X1, `0x33`) | 화점 탐지 및 온도 모니터링 |
+| **초음파 센서** | HC-SR04 | GPIO 23 (TRIG) / 24 (ECHO) | 장애물 거리 측정 및 회피 |
+
+**다. 구동부 및 액추에이터 (Actuators)**
 
 | 구성요소 | 모델/사양 | 수량 | 용도 |
 |---------|----------|------|------|
@@ -44,6 +64,12 @@
 | **DC 모터** | - | 1 | 후륜 구동 (전진/후진) |
 | **서보 모터** | - | 3 | 조향(1), 목 팬/틸트(2) |
 | **워터 펌프** | - | 1 | 소화액 분사 |
+
+
+라. 인터페이스 및 통신 구조
+- I2C 통신: Raspberry Pi 5의 /dev/i2c-1 버스를 공유하며, PWM 드라이버($0x5F$)와 열화상 센서($0x33$)가 각각 독립적인 주소로 통신합니다.
+- GPIO 제어: 초음파 센서는 HAT을 거치지 않고 Raspberry Pi의 40-Pin GPIO에 직접 연결되어 실시간성을 확보합니다.
+
 
 **[하드웨어 연결 사진]**
 ![20251219_114947](https://github.com/user-attachments/assets/8d783e52-4569-46a4-9058-de4fa4b576a2)
