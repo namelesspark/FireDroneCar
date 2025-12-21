@@ -36,7 +36,7 @@
 <img width="7631" height="5455" alt="Mermaid Chart - Create complex, visual diagrams with text -2025-12-20-184915" src="https://github.com/user-attachments/assets/e3880e8e-c8db-4763-af69-72b2427e6549" />
 
 ### 하드웨어 구성
-- 본 로봇은 Raspberry Pi 5를 메인 제어기로 채택하여 고성능 연산을 수행하며, Adeept Robot HAT V3.1을 통해 전력 분배 및 액추에이터 제어를 통합 관리하는 구조로 설계되었습니다.
+- 본 로봇은 Raspberry Pi 5를 메인 제어기기이며, Adeept Robot HAT V3.1을 통해 전력 분배 및 액추에이터 제어를 통합 관리하는 구조로 설계되었습니다.
 
 **가. 제어 보드 및 전원 시스템**
 * **메인 컨트롤러:** Raspberry Pi 5 (데이터 처리 및 상위 제어 알고리즘 실행)
